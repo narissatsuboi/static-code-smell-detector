@@ -44,9 +44,7 @@ const map<string, string> MENU_OPTIONS = {{"1", LM},
 
 void printBanner() {
     cout << "\n";
-    cout << "////////////////////////////////////////////////////////////////\n";
     cout << "////////////////////CODE SMELL DETECTOR ////////////////////////\n";
-    cout << "////////////////////////////////////////////////////////////////\n";
     cout << "\n";
 }
 
@@ -80,7 +78,7 @@ void printUsage() {
     ss << "eg:      " << relativeExample << "\n";
     ss << "eg:      " << relativeExample << "\n";
     ss << "eg:      " << absoluteExample << "\n";
-    cout << ss.str();
+    cout << ss.str() << "\n";
 }
 
 
@@ -146,7 +144,7 @@ int main(int argc, char *argv[]) {
     }
     ifstream inFile(argv[1]);
     if (!inFile.is_open()) {
-        cout << "ERROR" << "\n";
+        cout << "\n" << "ERROR" << "\n";
         cout << "Could not open file at path: " << argv[1] << "\n";
         printUsage();
         exit(1);
