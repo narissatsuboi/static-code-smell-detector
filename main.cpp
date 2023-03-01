@@ -6,20 +6,41 @@
 #include <vector>
 #include <map>
 #include <iomanip>
+
 using namespace std;
 
+void printBanner();
 
-/**
- * MAIN FUNCTIONS
- */
+void printDirections();
+
+void printMenuOptions();
+
+void printExitResults();
+
+void printUsage();
+
+void handleExit();
+
+string menuLoop();
+
+bool handleSelection(string input);
+
+bool detectAgain();
+
+bool selectedExit(string &selection);
+
+void run();
 
 const string LM = "LONG METHOD";
 const string LPL = "LONG PARAMETER METHOD";
 const string DC = "DUPLICATED CODE";
-const string AGAIN = "DETECT AGAIN";
 const string EXIT = "exit";
-const map<string, string> MENU_OPTIONS = {{"1", LM}, {"2", LPL}, {"3", DC},
-                                          {"4", AGAIN}};
+const string ALLONALL = "DETECTORS ON ALL METHODS";
+const map<string, string> MENU_OPTIONS = {{"1", LM},
+                                          {"2", LPL},
+                                          {"3", DC},
+                                          {"4", ALLONALL}};
+
 
 void printBanner() {
     cout << "\n";
@@ -28,58 +49,18 @@ void printBanner() {
     cout << "////////////////////////////////////////////////////////////////\n";
     cout << "\n";
 }
-void printDirections() {
-    string directions = "DIRECTIONS\n"
-                        "ANALYZE ALL METHODS\n"
-                        "Eg: >> 2  + ENTER \n"
-                        "OR\n"
-                        "ANALYZE SPECIFIC METHODS\n"
-                        "Eg: >> 1 methodname + ENTER \n"
-                        "Eg: >> 2 methodname1, methodname2 + ENTER\n";
 
-    cout << directions << "\n";
-}
-void printMenuOptions() {
-
-
-    for (const auto& [key, value] : MENU_OPTIONS) {
-        cout << ">> " << key << " : " << value << "\n";
-    }
-    cout << "SELECTION";
-    cout << ">> ";
-}
-
-void printExitResults() {
-    cout << " YOUR CODE SMELL SUMMARY IS BELOW \n";
-    cout << "... ... \n";
-    cout << " GOODBYE \n";
-}
-
-void handleExit() {
-    printExitResults();
-    exit(0);
-}
-
-
-bool menuLoop() {
-    printBanner();
-    printDirections();
-    printMenuOptions();
-
-    string selection;
-    cin >> ws;
-    getline(cin, selection);
-
-    if (selection == "exit" || selection == "EXIT") {
-        return false;
-    }
-    return true;
+bool selectedExit(string &selection) {
+    return selection == "exit" || selection == "EXIT" || selection == "Exit";
 }
 
 void run() {
     bool keepGoing = true;
-    while(keepGoing) {
-        keepGoing = menuLoop();
+    string selection;
+    while (keepGoing) {
+        selection = menuLoop();
+        handleSelection(selection);
+        keepGoing = detectAgain();
     }
     handleExit();
 }
@@ -102,7 +83,63 @@ void printUsage() {
     cout << ss.str();
 }
 
-int main(int argc, char* argv[]) {
+
+bool handleSelection(string input) {
+    return true; // when done
+}
+
+string menuLoop() {
+    printBanner();
+    printDirections();
+    printMenuOptions();
+
+    string selection;
+    cin >> ws;
+    getline(cin, selection);
+    cout << selection;
+
+    if (selectedExit(selection)) {
+        exit(0);
+    }
+    return selection;
+}
+
+bool detectAgain() {
+    stringstream ss;
+    ss << "\n";
+    ss << "Would you like to detect again?" << "\n";
+    ss << "Yes or Exit?   ";
+    cout << ss.str();
+    string selection;
+    cin >> ws;
+    getline(cin, selection);
+
+    return !(selectedExit(selection));
+}
+
+void handleExit() {
+    printExitResults();
+    exit(0);
+}
+
+void printExitResults() {
+    cout << " YOUR CODE SMELL SUMMARY IS BELOW \n";
+    cout << "... ... \n";
+    cout << " GOODBYE \n";
+}
+
+void printDirections() {
+    string directions = "DIRECTIONS\n";
+    cout << directions << "\n";
+}
+
+void printMenuOptions() {
+    for (const auto &[key, value]: MENU_OPTIONS) {
+        cout << ">> " << key << " : " << value << "\n";
+    }
+}
+
+int main(int argc, char *argv[]) {
     if (argc < 2) {
         printUsage();
         exit(1);
@@ -110,7 +147,7 @@ int main(int argc, char* argv[]) {
     ifstream inFile(argv[1]);
     if (!inFile.is_open()) {
         cout << "ERROR" << "\n";
-        cout << "Could not open file at path: "  << argv[1] << "\n";
+        cout << "Could not open file at path: " << argv[1] << "\n";
         printUsage();
         exit(1);
     }
