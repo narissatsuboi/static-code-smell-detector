@@ -60,7 +60,7 @@ bool selectionHandler(string &codeSmell) {
     return false;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     printTitle();
     menuLoop();
 }
