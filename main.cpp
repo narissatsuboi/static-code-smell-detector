@@ -9,6 +9,9 @@
 
 using namespace std;
 
+/**
+ * START MAIN METHODS /////////////////////////////////////////////////////////
+ */
 void printBanner();
 
 void printDirections();
@@ -40,7 +43,6 @@ const map<string, string> MENU_OPTIONS = {{"1", LM},
                                           {"2", LPL},
                                           {"3", DC},
                                           {"4", ALLONALL}};
-
 
 void printBanner() {
     cout << "\n";
@@ -80,7 +82,6 @@ void printUsage() {
     ss << "eg:      " << absoluteExample << "\n";
     cout << ss.str() << "\n";
 }
-
 
 bool handleSelection(string input) {
     return true; // when done
@@ -136,6 +137,9 @@ void printMenuOptions() {
         cout << ">> " << key << " : " << value << "\n";
     }
 }
+/**
+ * END MAIN METHODS ///////////////////////////////////////////////////////////
+ */
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
