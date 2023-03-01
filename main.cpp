@@ -1,31 +1,32 @@
-
+#include <limits>
 #include <iostream>
+#include <cctype>
 #include <vector>
 #include <map>
 #include <iomanip>
 using namespace std;
 
+
+/**
+ * MAIN FUNCTIONS
+ */
+
 const string LM = "LONG METHOD";
 const string LPL = "LONG PARAMETER METHOD";
 const string DC = "DUPLICATED CODE";
 const string AGAIN = "DETECT AGAIN";
-const string EXIT = "EXIT";
+const string EXIT = "exit";
+const map<string, string> MENU_OPTIONS = {{"1", LM}, {"2", LPL}, {"3", DC},
+                                          {"4", AGAIN}};
 
-
-void printTitle();
-void menuLoop();
-bool selectionHandler(string& s);
-
-void printTitle() {
+void printBanner() {
     cout << "\n";
     cout << "////////////////////////////////////////////////////////////////\n";
     cout << "////////////////////CODE SMELL DETECTOR ////////////////////////\n";
     cout << "////////////////////////////////////////////////////////////////\n";
     cout << "\n";
 }
-
-void menuLoop() {
-
+void printDirections() {
     string directions = "DIRECTIONS\n"
                         "ANALYZE ALL METHODS\n"
                         "Eg: >> 2  + ENTER \n"
@@ -34,33 +35,53 @@ void menuLoop() {
                         "Eg: >> 1 methodname + ENTER \n"
                         "Eg: >> 2 methodname1, methodname2 + ENTER\n";
 
-    map<string, string> choices{
-            {"1", LM},
-            {"2", LPL},
-            {"3", DC},
-            {"4", AGAIN},
-            {"5", EXIT}
-    };
     cout << directions << "\n";
-    for (const auto& [key, value] : choices) {
+}
+void printMenuOptions() {
+
+
+    for (const auto& [key, value] : MENU_OPTIONS) {
         cout << ">> " << key << " : " << value << "\n";
     }
-
-    string selection;
-    cout << "YOUR INPUT\n";
-    cout << ">>";
-    cin >> selection;
-
-    selectionHandler(choices[selection]);
+    cout << "SELECTION";
+    cout << ">> ";
 }
 
-bool selectionHandler(string &codeSmell) {
+void printExitResults() {
+    cout << " YOUR CODE SMELL SUMMARY IS BELOW \n";
+    cout << "... ... \n";
+    cout << " GOODBYE \n";
+}
+
+void handleExit() {
+    printExitResults();
+    exit(0);
+}
 
 
-    return false;
+bool menuLoop() {
+    printBanner();
+    printDirections();
+    printMenuOptions();
+
+    string selection;
+    cin >> ws;
+    getline(cin, selection);
+
+    if (selection == "exit" || selection == "EXIT") {
+        return false;
+    }
+    return true;
+}
+
+void run() {
+    bool keepGoing = true;
+    while(keepGoing) {
+        keepGoing = menuLoop();
+    }
+    handleExit();
 }
 
 int main(int argc, char* argv[]) {
-    printTitle();
-    menuLoop();
+    run();
 }
