@@ -1,6 +1,8 @@
 #include <limits>
 #include <iostream>
 #include <cctype>
+#include <fstream>
+#include<sstream>
 #include <vector>
 #include <map>
 #include <iomanip>
@@ -82,6 +84,35 @@ void run() {
     handleExit();
 }
 
+void printUsage() {
+    string compileCommand = "$ g++ main.cpp -o smelldetector";
+    string runCommand = "$ ./smelldetector pathToFile";
+    string localExample = "$ smelldetector stinkyFile.cpp";
+    string relativeExample = "$ smelldetector myFiles/stinkyFile.cpp";
+    string absoluteExample = "$ smelldetector C:Desktop/myProject/myFiles/stinkyFile.cpp";
+
+    stringstream ss;
+    ss << "\n" << "USAGE" << "\n";
+    ss << "compile: " << compileCommand << "\n";
+    ss << "run:     " << runCommand << "\n";
+    ss << "eg:      " << localExample << "\n";
+    ss << "eg:      " << relativeExample << "\n";
+    ss << "eg:      " << relativeExample << "\n";
+    ss << "eg:      " << absoluteExample << "\n";
+    cout << ss.str();
+}
+
 int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        printUsage();
+        exit(1);
+    }
+    ifstream inFile(argv[1]);
+    if (!inFile.is_open()) {
+        cout << "ERROR" << "\n";
+        cout << "Could not open file at path: "  << argv[1] << "\n";
+        printUsage();
+        exit(1);
+    }
     run();
 }
