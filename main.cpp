@@ -1,6 +1,4 @@
-#include <limits>
 #include <iostream>
-#include <cctype>
 #include <fstream>
 #include<sstream>
 #include <vector>
@@ -9,9 +7,8 @@
 
 using namespace std;
 
-/**
- * START MAIN METHODS /////////////////////////////////////////////////////////
- */
+/* Signatures */
+
 void printBanner();
 
 void printDirections();
@@ -32,7 +29,7 @@ bool detectAgain();
 
 bool selectedExit(string &selection);
 
-void run();
+void run(string& filepath);
 
 const string LM = "LONG METHOD";
 const string LPL = "LONG PARAMETER METHOD";
@@ -43,6 +40,7 @@ const map<string, string> MENU_OPTIONS = {{"1", LM},
                                           {"2", LPL},
                                           {"3", DC},
                                           {"4", ALLONALL}};
+/* Driver Methods */
 
 void printBanner() {
     cout << "\n";
@@ -54,7 +52,7 @@ bool selectedExit(string &selection) {
     return selection == "exit" || selection == "EXIT" || selection == "Exit";
 }
 
-void run() {
+void run(string& filepath) {
     bool keepGoing = true;
     string selection;
     while (keepGoing) {
@@ -137,21 +135,34 @@ void printMenuOptions() {
         cout << ">> " << key << " : " << value << "\n";
     }
 }
-/**
- * END MAIN METHODS ///////////////////////////////////////////////////////////
- */
+
+namespace Detect {
+    void readFile(string& filepath);
+
+    void readFile(string &filepath) {
+        ifstream inFile(filepath);
+        string line;
+        while(getline(inFile, line)) {
+            cout << line << "\n";
+        }
+        inFile.close();
+    }
+}
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         printUsage();
         exit(1);
     }
-    ifstream inFile(argv[1]);
+    string filepath = argv[1];
+    ifstream inFile(filepath);
     if (!inFile.is_open()) {
         cout << "\n" << "ERROR" << "\n";
         cout << "Could not open file at path: " << argv[1] << "\n";
         printUsage();
         exit(1);
     }
-    run();
+    Detect::readFile(filepath);
+//    inFile.close();
+//    run(filepath);
 }
