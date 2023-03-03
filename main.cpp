@@ -1,17 +1,19 @@
-#include <limits>
+#include "RegexKeeper.h"
+
 #include <iostream>
-#include <cctype>
 #include <fstream>
 #include<sstream>
 #include <vector>
 #include <map>
 #include <iomanip>
+#include <unordered_set>
+#include <unordered_map>
+#include <regex>
 
 using namespace std;
 
-/**
- * START MAIN METHODS /////////////////////////////////////////////////////////
- */
+/* Signatures */
+
 void printBanner();
 
 void printDirections();
@@ -32,7 +34,7 @@ bool detectAgain();
 
 bool selectedExit(string &selection);
 
-void run();
+void run(string& filepath);
 
 const string LM = "LONG METHOD";
 const string LPL = "LONG PARAMETER METHOD";
@@ -43,6 +45,7 @@ const map<string, string> MENU_OPTIONS = {{"1", LM},
                                           {"2", LPL},
                                           {"3", DC},
                                           {"4", ALLONALL}};
+/* Driver Methods */
 
 void printBanner() {
     cout << "\n";
@@ -54,7 +57,7 @@ bool selectedExit(string &selection) {
     return selection == "exit" || selection == "EXIT" || selection == "Exit";
 }
 
-void run() {
+void run(string& filepath) {
     bool keepGoing = true;
     string selection;
     while (keepGoing) {
@@ -138,20 +141,80 @@ void printMenuOptions() {
     }
 }
 /**
- * END MAIN METHODS ///////////////////////////////////////////////////////////
+ * DETECOR
  */
+
+RegexKeeper myRK;
+
+const char SPACE = ' ';
+
+const unordered_map<string, string> SYNTAX (
+        {
+            { "SPACE", " " },
+            { "LEFT_PAREN", "(" },
+            { "RIGHT_PAREN", ")" },
+            { "LEFT_CURLY", "{" },
+            { "RIGHT_CURLY", "}" },
+            { "AMPERSAND", "&"}
+        }
+    );
+
+void parseFile(string& filepath);
+
+void detectMethodSignatures(string& line, vector<string>& sigs);
+
+void removeLeadingWhitespace(string& line);
+
+void parseFile(string& filepath) {
+    ifstream inFile(filepath);
+    string line;
+    vector<string> signaturesFound{};
+
+    while(getline(inFile, line)) {
+        removeLeadingWhitespace(line);
+        detectMethodSignatures(line, signaturesFound);
+    }
+    inFile.close();
+}
+
+void detectMethodSignatures(string &line, vector<string> &sigs) {
+    regex simpleReturnRegex = myRK.simpleReg();
+    regex complexReturnRegex = myRK.complexReg();
+    regex constrRegex = myRK.constructorReg();
+
+    sregex_iterator currMatch(line.begin(), line.end(), constrRegex);
+    sregex_iterator lastMatch;
+
+    while(currMatch != lastMatch) {
+        smatch match = *currMatch;
+        sigs.push_back(match.str());
+        cout << match.str() << "\n";
+        currMatch++;
+    }
+}
+
+void removeLeadingWhitespace(string &line) {
+    regex_replace(line, myRK.selectLeadingWSReg(), "");
+}
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         printUsage();
         exit(1);
     }
-    ifstream inFile(argv[1]);
+    string filepath = argv[1];
+    ifstream inFile(filepath);
     if (!inFile.is_open()) {
         cout << "\n" << "ERROR" << "\n";
         cout << "Could not open file at path: " << argv[1] << "\n";
         printUsage();
         exit(1);
     }
-    run();
+
+    string test = "bool myFunc(string& bool&)";
+
+//    printMatches(test, reg);
+    parseFile(filepath);
+//    inFile.close();
+//    run(filepath);
 }
