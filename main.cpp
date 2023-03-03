@@ -1,9 +1,14 @@
+#include "RegexKeeper.h"
+
 #include <iostream>
 #include <fstream>
 #include<sstream>
 #include <vector>
 #include <map>
 #include <iomanip>
+#include <unordered_set>
+#include <unordered_map>
+#include <regex>
 
 using namespace std;
 
@@ -135,18 +140,61 @@ void printMenuOptions() {
         cout << ">> " << key << " : " << value << "\n";
     }
 }
+/**
+ * DETECOR
+ */
 
-namespace Detect {
-    void readFile(string& filepath);
+RegexKeeper myRK;
 
-    void readFile(string &filepath) {
-        ifstream inFile(filepath);
-        string line;
-        while(getline(inFile, line)) {
-            cout << line << "\n";
+const char SPACE = ' ';
+
+const unordered_map<string, string> SYNTAX (
+        {
+            { "SPACE", " " },
+            { "LEFT_PAREN", "(" },
+            { "RIGHT_PAREN", ")" },
+            { "LEFT_CURLY", "{" },
+            { "RIGHT_CURLY", "}" },
+            { "AMPERSAND", "&"}
         }
-        inFile.close();
+    );
+
+void parseFile(string& filepath);
+
+void detectMethodSignatures(string& line, vector<string>& sigs);
+
+void removeLeadingWhitespace(string& line);
+
+void parseFile(string& filepath) {
+    ifstream inFile(filepath);
+    string line;
+    vector<string> signaturesFound{};
+
+    while(getline(inFile, line)) {
+        removeLeadingWhitespace(line);
+        detectMethodSignatures(line, signaturesFound);
     }
+    inFile.close();
+}
+
+void detectMethodSignatures(string &line, vector<string> &sigs) {
+    regex simpleReturnRegex = myRK.simpleReg();
+    regex complexReturnRegex = myRK.complexReg();
+    regex constrRegex = myRK.constructorReg();
+
+    sregex_iterator currMatch(line.begin(), line.end(), constrRegex);
+    sregex_iterator lastMatch;
+
+    while(currMatch != lastMatch) {
+        smatch match = *currMatch;
+        sigs.push_back(match.str());
+        cout << match.str() << "\n";
+        currMatch++;
+    }
+}
+
+void removeLeadingWhitespace(string &line) {
+    regex_replace(line, myRK.selectLeadingWSReg(), "");
 }
 
 int main(int argc, char *argv[]) {
@@ -162,7 +210,11 @@ int main(int argc, char *argv[]) {
         printUsage();
         exit(1);
     }
-    Detect::readFile(filepath);
+
+    string test = "bool myFunc(string& bool&)";
+
+//    printMatches(test, reg);
+    parseFile(filepath);
 //    inFile.close();
 //    run(filepath);
 }

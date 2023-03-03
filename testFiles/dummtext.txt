@@ -1,3 +1,0 @@
-This is a dummy text file.
-
-I have three lines.

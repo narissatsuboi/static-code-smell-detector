@@ -1,0 +1,8 @@
+CORREECT REGEX 
+    shows bits of the start and end but all of the function name 
+    string complexReturn(R"([A-Za-z]\>+ [A-Za-z0-9]+\()");
+
+    shows params and a bit of the start 
+    string complexReturn(R"([A-Za-z]\>+ [A-Za-z0-9]+\([A-Za-z0-9]+& s\))");
+
+    string complexReturn(R"([^]*[A-Za-z]\>+ [A-Za-z0-9]+\([A-Za-z0-9]+& s\))");
