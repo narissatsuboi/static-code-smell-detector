@@ -23,7 +23,7 @@ const int LONG_PARAM_THRESHOLD = 3;
 Function::Function() = default;
 
 Function::Function(int &startLine, string &handle, string &fullSignature) {
-    this-> handle = handle;
+    this->handle = handle;
     this->start = startLine;
 }
 

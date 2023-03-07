@@ -4,7 +4,9 @@
 
 #ifndef SNIFFY_FUNCTION_H
 #define SNIFFY_FUNCTION_H
+
 #include <string>
+
 using namespace std;
 
 class Function
@@ -19,9 +21,13 @@ public:
     int paramCount = 0;
 
     Function();
+
     Function(int &startLine, string &handle, string &fullSignature);
+
     bool isLongMethod() const;
+
     bool isLongParams() const;
+
     bool isDupCode();
 };
 
