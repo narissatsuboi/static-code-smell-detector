@@ -1,5 +1,5 @@
 #include "RegexKeeper.h"
-
+#include "Function.h"
 #include <iostream>
 #include <fstream>
 #include<sstream>
@@ -19,30 +19,43 @@ using namespace std;
 // https://stackoverflow.com/questions/216823/how-to-trim-an-stdstring
 
 // trim from start (in place)
-static inline void ltrim(std::string &s) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+static inline void ltrim(string &s) {
+    s.erase(s.begin(), find_if(s.begin(), s.end(), [](unsigned char ch) {
         return !std::isspace(ch);
     }));
 }
 
 // trim from end (in place)
-static inline void rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+static inline void rtrim(string &s) {
+    s.erase(find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
         return !std::isspace(ch);
     }).base(), s.end());
 }
 
 // trim from both ends (in place)
-static inline void trim(std::string &s) {
+static inline void trim(string &s) {
     rtrim(s);
     ltrim(s);
 
     // trim to lst ')'
-    int n = s.length();
-    int idx = s.find(')');
+    size_t  n = s.length();
+    size_t  idx = s.find(')');
     s.erase(n - (n-idx-1));
 }
 
+static inline string trimToFunctionName(string &s) {
+    string functionName;
+    int endIdx = s.find('(');
+    int startIdx = 0;
+    for (int i = endIdx - 1; i>=0; i--) {
+        if (isspace(s[i])) {
+            startIdx = i;
+            break;
+        }
+    }
+    functionName = s.erase(0, startIdx);
+    return functionName;
+}
 
 /* UTILITY SIGNATURES */
 
@@ -50,18 +63,17 @@ void printMap(unordered_map<char, int>& m);
 
 /* UI SIGNATURES*/
 
-void printBanner();
+void printStart(string &filename);
 void printDirections();
+void printFunctionNames(map<string, Function> &functions);
 void printMenuOptions();
 void printExitResults();
 void printUsage();
 string menuLoop();
 bool detectAgain();
 
-void handleExit();
-bool handleSelection(string input);
+
 bool selectedExit(string &selection);
-void run(string& filepath);
 
 const string LM = "LONG METHOD";
 const string LPL = "LONG PARAMETER METHOD";
@@ -78,7 +90,7 @@ bool hasParenthesesPair(string&s);
 bool isBlankLine(string&s);
 bool isComment(string&s);
 bool isDelimiter(char&c);
-vector<string> getSignatures(string& filepath);
+vector<Function> buildFunctionList(ifstream &inFile);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -93,15 +105,26 @@ void printMap(unordered_map<char, int> &m) {
 
 /* UI DEFINITIONS */
 
-void printBanner() {
-    cout << "\n";
-    cout << "////////////////////CODE SMELL DETECTOR ////////////////////////\n";
-    cout << "\n";
+void printStart(string &filename) {
+    stringstream ss;
+    ss << "\n* WELCOME TO THE CODE SMELL DETECTOR *\n\n";
+    ss << "FILE\n" << filename << endl << endl;
+    ss << "INSTRUCTIONS\n";
+    ss << "1. Select the code smell to detect\n";
+    ss << "2. ENTER to scan all functions\n   OR \n   enter the function names + ENTER\n";
+    ss << "     eg. myFunc1, myFunc2\n";
+    cout << ss.str();
 }
-void printDirections() {
-    string directions = "DIRECTIONS\n";
-    cout << directions << "\n";
+
+void printFunctionNames(vector<Function> &functions) {
+    stringstream ss;
+    cout << "\nFUNCTION LIST\n";
+
+    for (auto function : functions) {
+        cout << function.handle << endl;
+    }
 }
+
 void printMenuOptions() {
     for (const auto &[key, value]: MENU_OPTIONS) {
         cout << ">> " << key << " : " << value << "\n";
@@ -130,10 +153,7 @@ void printUsage() {
     cout << ss.str() << "\n";
 }
 string menuLoop() {
-    printBanner();
-    printDirections();
     printMenuOptions();
-
     string selection;
     cin >> ws;
     getline(cin, selection);
@@ -153,29 +173,11 @@ bool detectAgain() {
     string selection;
     cin >> ws;
     getline(cin, selection);
-
     return !(selectedExit(selection));
 }
 
-void handleExit() {
-    printExitResults();
-    exit(0);
-}
-bool handleSelection(string input) {
-    return true; // when done
-}
 bool selectedExit(string &selection) {
     return selection == "exit" || selection == "EXIT" || selection == "Exit";
-}
-void run(string& filepath) {
-    bool keepGoing = true;
-    string selection;
-    while (keepGoing) {
-        selection = menuLoop();
-        handleSelection(selection);
-        keepGoing = detectAgain();
-    }
-    handleExit();
 }
 
 /* DETECTOR DEFINIONS */
@@ -210,32 +212,25 @@ bool hasParenthesesPair(string &s) {
     return freq[')'] == 1;
 }
 
-vector<string> getSignatures(string &filepath) {
-    vector<string> signatures = {};
-    ifstream inFile(filepath);
-    string line;
+vector<Function> buildFunctionList(ifstream &inFile) {
+    vector<Function> functionList;
+    string line, name;
     int lineNo = 0;
     while(getline(inFile, line)) {
         lineNo++;
-
-        // remove leading and trailing ws
-        // trim to last )
         trim(line);
-
-        // skip comments and ws lines
         if (skipLine(line)) {
-            cout << "SKIPPED: " << lineNo << " " << line << endl;
+//            cout << "SKIPPED: " << lineNo << " " << line << endl;
             continue;
         }
-
-        // find candidate line
         if (hasParenthesesPair(line)) {
-            cout << "FOUND:   " << lineNo << " " << line << endl;
+            name = trimToFunctionName(line);
+            // TODO CHECK IF EXISTS BEFORE INPUT
+            functionList.emplace_back(lineNo, name, line);
+//            cout << "FOUND:   " << lineNo << " " << line << endl;
         }
-
     }
-    inFile.close();
-    return signatures;
+    return functionList;
 }
 
 bool skipLine(string&line) {
@@ -262,6 +257,8 @@ bool isDelimiter(char &c) {
     return DELIMS.count(c);
 }
 
+
+
 // MAIN ////////////////////////////////////////////////////////////////////////
 int main(int argc, char *argv[]) {
     // usage
@@ -270,10 +267,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    // store filepath from command line
     string filepath = argv[1];
-
-    // validate file
     ifstream inFile(filepath);
     if (!inFile.is_open()) {
         cout << "\n" << "ERROR" << "\n";
@@ -281,14 +275,15 @@ int main(int argc, char *argv[]) {
         printUsage();
         exit(1);
     }
-        inFile.close();
 
-    // find all signatures and store in vector
-    getSignatures(filepath);
+    printStart(filepath);
+    vector<Function> handles = buildFunctionList(inFile);
+    printFunctionNames(handles);
 
-    string test = "case myFunc(string& bool&) ";
+    string selection = menuLoop();
+    string s = "int myFunc()";
 
-
-    hasInvalidFirstToken(test);
-//    cin.get();
+    // find all signatures
+    inFile.close();
+    cin.get();
 }
