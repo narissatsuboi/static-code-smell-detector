@@ -6,6 +6,14 @@
 
 using namespace std;
 
+int easyMethod() {
+    if (true) {
+        cout << "yeehaw";
+    } else {
+        cout << "bogus";
+    }
+}
+
 
 class PlainBox
 {

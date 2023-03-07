@@ -12,24 +12,23 @@
 
 #include "Detector.h"
 
-/* WHITESPACE TRIM INLINE DEFINITIONS*/
-// https://stackoverflow.com/questions/216823/how-to-trim-an-stdstring
+Detector::Detector(string &filepath) {
+    this->file = filepath;
+    buildFunctionList();
+}
 
-// trim from start (in place)
 static inline void ltrim(string &s) {
     s.erase(s.begin(), find_if(s.begin(), s.end(), [](unsigned char ch) {
         return !std::isspace(ch);
     }));
 }
 
-// trim from end (in place)
 static inline void rtrim(string &s) {
     s.erase(find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
         return !std::isspace(ch);
     }).base(), s.end());
 }
 
-// trim from both ends (in place)
 static inline void trim(string &s) {
     rtrim(s);
     ltrim(s);
@@ -41,16 +40,16 @@ static inline void trim(string &s) {
 }
 
 static inline string trimToFunctionName(string &s) {
-    string functionName;
+    string functionName = s;
     int endIdx = s.find('(');
     int startIdx = 0;
     for (int i = endIdx - 1; i >= 0; i--) {
         if (isspace(s[i])) {
             startIdx = i;
+            functionName = s.erase(0, startIdx + 1);
             break;
         }
     }
-    functionName = s.erase(0, startIdx);
     return functionName;
 }
 
@@ -78,14 +77,11 @@ bool Detector::hasParenthesesPair(string &s) {
                 it = freq.find(c);
                 it->second++;
             } else {
-//                printMap(freq);
                 isBalanced = false;
-//                return false;
             }
         } else
             stack.push_back(c);
     }
-//    printMap(freq);
     //TODO need to update if a function declaration will extend multiple lines
     if (!isBalanced) {
         return false;
@@ -93,25 +89,22 @@ bool Detector::hasParenthesesPair(string &s) {
     return freq[')'] == 1;
 }
 
-vector<Function> Detector::buildFunctionList(ifstream &inFile) {
-    vector<Function> functionList;
+void Detector::buildFunctionList() {
     string line, name;
     int lineNo = 0;
+    ifstream inFile(this->file);
     while (getline(inFile, line)) {
         lineNo++;
         trim(line);
         if (skipLine(line)) {
-//            cout << "SKIPPED: " << lineNo << " " << line << endl;
             continue;
         }
         if (hasParenthesesPair(line)) {
             name = trimToFunctionName(line);
-            // TODO CHECK IF EXISTS BEFORE INPUT
-            functionList.emplace_back(lineNo, name, line);
-//            cout << "FOUND:   " << lineNo << " " << line << endl;
+            this->functionList.emplace_back(lineNo, name, line);
         }
     }
-    return functionList;
+    inFile.close();
 }
 
 bool Detector::skipLine(string &line) {
@@ -131,6 +124,43 @@ bool Detector::isBlankLine(string &s) {
 bool Detector::isComment(string &s) {
     unordered_set<char> SKIP({'#', '/', '*'});
     return SKIP.count((s.at(0)));
+}
+
+bool Detector::isLongMethod(Function &function) {
+    const unordered_set<char> delims({'}', '{'});
+    ifstream inFile(this->file);
+    string line;
+    int lineNo = 0;
+    int matchesMade = 0;
+    unordered_map<char, char> CLOSED({{'}', '{'}});
+
+    vector<char> stack = {};
+     do {
+        lineNo++;
+        if (lineNo < function.start) {
+            continue;
+        }
+        for (char &c: line) {
+            if (!delims.count(c))
+                continue;
+            if (CLOSED.count(c)) {
+                if (!stack.empty() && stack.back() == CLOSED[c]) {
+                    stack.pop_back();
+                    matchesMade++;
+                }
+            } else
+                stack.push_back(c);
+        }
+         if (stack.empty() && matchesMade > 0) {
+             function.end = lineNo-1;
+             function.loc = function.end - function.start + 1;
+             cout << "EOF" << lineNo - 1 << endl;
+             cout << "LOC" << function.loc << endl;
+             break;
+         }
+    } while(getline(inFile, line));
+    inFile.close();
+    return false;
 }
 
 

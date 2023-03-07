@@ -22,7 +22,7 @@ public:
 
     Function();
 
-    Function(int &startLine, string &handle, string &fullSignature);
+    Function(int &startLine, string &name, string &fullSignature);
 
     bool isLongMethod() const;
 
