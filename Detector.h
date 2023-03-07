@@ -1,4 +1,5 @@
 #include "Function.h"
+#include <vector>
 
 #ifndef SNIFFY_DETECTOR_H
 #define SNIFFY_DETECTOR_H
@@ -6,19 +7,26 @@
 class Detector
 {
 public:
-    static bool skipLine(string &s);
+    explicit Detector(string &filepath);
+    vector<Function> functionList;
+    string file;
+
+    bool skipLine(string &s);
 
     static bool hasInvalidFirstToken(string &s);
 
-    static bool hasParenthesesPair(string &s);
+    bool hasParenthesesPair(string &s);
 
     static bool isBlankLine(string &s);
 
     static bool isComment(string &s);
 
-    static bool isDelimiter(char &c);
+    bool isDelimiter(char &c);
 
-    static vector<Function> buildFunctionList(ifstream &inFile);
+    void buildFunctionList();
+
+    bool isLongMethod(Function &function);
+
 };
 
 #endif //SNIFFY_DETECTOR_H
