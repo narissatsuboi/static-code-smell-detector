@@ -1,6 +1,7 @@
-//
-// Created by nars on 3/6/2023.
-//
+/**
+ * @file Function.h
+ * @author Narissa Tsuboi
+ */
 
 #ifndef SNIFFY_FUNCTION_H
 #define SNIFFY_FUNCTION_H
@@ -18,18 +19,19 @@ public:
     int start{};
     int end{};
     int loc{};
-    int paramCount = 0;
+    bool longmethod{};
+    int paramCount{};
+    bool longparams{};
+    bool dupcode{};
 
     Function();
 
     Function(int &startLine, string &name, string &fullSignature);
 
-    bool isLongMethod() const;
+    bool dupCode();
 
-    bool isLongParams() const;
 
-    bool isDupCode();
+
+    friend ostream& operator<<(ostream& os, const Function& func);
 };
-
-
 #endif //SNIFFY_FUNCTION_H

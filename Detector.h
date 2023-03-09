@@ -1,3 +1,8 @@
+/**
+ * @file Detector.h
+ * @author Narissa Tsuboi
+ */
+
 #include "Function.h"
 #include <vector>
 
@@ -9,6 +14,7 @@ class Detector
 public:
     explicit Detector(string &filepath);
     vector<Function> functionList;
+    vector<Function> functions;
     string file;
 
     bool skipLine(string &s);
@@ -25,7 +31,9 @@ public:
 
     void buildFunctionList();
 
-    bool isLongMethod(Function &function);
+    void detectLongMethods();
+
+    bool isLongMethod(Function &function) const;
 
 };
 

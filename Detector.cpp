@@ -11,6 +11,9 @@
 #include <set>
 
 #include "Detector.h"
+const int LONG_METHOD_THRESHOLD = 15;
+
+const int LONG_PARAM_THRESHOLD = 3;
 
 Detector::Detector(string &filepath) {
     this->file = filepath;
@@ -126,7 +129,7 @@ bool Detector::isComment(string &s) {
     return SKIP.count((s.at(0)));
 }
 
-bool Detector::isLongMethod(Function &function) {
+bool Detector::isLongMethod(Function &function) const {
     const unordered_set<char> delims({'}', '{'});
     ifstream inFile(this->file);
     string line;
@@ -154,13 +157,21 @@ bool Detector::isLongMethod(Function &function) {
          if (stack.empty() && matchesMade > 0) {
              function.end = lineNo-1;
              function.loc = function.end - function.start + 1;
-             cout << "EOF" << lineNo - 1 << endl;
-             cout << "LOC" << function.loc << endl;
+             if (function.loc > LONG_METHOD_THRESHOLD) {
+                 function.longmethod = true;
+                 return true;
+             }
              break;
          }
     } while(getline(inFile, line));
     inFile.close();
     return false;
+}
+
+void Detector::detectLongMethods() {
+    for (auto& f : this->functions) {
+        isLongMethod(f);
+    }
 }
 
 

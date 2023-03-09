@@ -1,24 +1,21 @@
+/**
+ * @file Function.cpp
+ * @author Narissa Tsuboi
+ */
+
 #include "Function.h"
-
-
 #include <iostream>
-#include <fstream>
-#include<sstream>
 #include <vector>
-#include <map>
-#include <iomanip>
-#include <unordered_set>
-#include <unordered_map>
 #include <regex>
-#include <set>
-
 
 using namespace std;
 
-const int LONG_METHOD_THRESHOLD = 15;
-
-const int LONG_PARAM_THRESHOLD = 3;
-
+static inline string sectionBreak() {
+    int n = 30;
+    char sb[n];
+    std::fill_n (sb, n, '-');
+    return sb;
+}
 
 Function::Function() = default;
 
@@ -27,14 +24,11 @@ Function::Function(int &startLine, string &name, string &fullSignature) {
     this->start = startLine;
 }
 
-bool Function::isLongMethod() const {
-    return this->loc > LONG_METHOD_THRESHOLD;
-}
-
-bool Function::isLongParams() const {
-    return this->paramCount > LONG_METHOD_THRESHOLD;
-}
-
-bool Function::isDupCode() {
-    return false;
+ostream& operator<<(ostream &os, const Function &func) {
+    os << sectionBreak() << endl;
+    os << func.handle << endl;
+    os << sectionBreak() << endl;
+    os << "loc:    " << func.loc << endl;
+    os << "params: " << func.paramCount << endl;
+    return os;
 }

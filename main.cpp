@@ -1,11 +1,14 @@
+/**
+ * @file main.cpp
+ * @author Narissa Tsuboi
+ */
+
 #include "Detector.h"
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-#include<sstream>
 #include <vector>
 #include <map>
-#include <iomanip>
 #include <unordered_set>
 #include <unordered_map>
 #include <regex>
@@ -13,16 +16,14 @@
 
 using namespace std;
 
-const string LM = "LONG METHOD";
+const string LF = "LONG FUNCTION";
 const string LPL = "LONG PARAMETER METHOD";
 const string DC = "DUPLICATED CODE";
 const string EXIT = "exit";
 const string ALLONALL = "DETECTORS ON ALL METHODS";
-const map<string, string> MENU_OPTIONS = {{"1", LM},
-                                          {"2", LPL},
-                                          {"3", DC},
-                                          {"4", ALLONALL}};
-string sectionBreak() {
+const map<string, string> MENU_OPTIONS = {{"1", LF}, {"2", LPL},
+                                          {"3", DC}, {"4", ALLONALL}};
+static inline string sectionBreak() {
     int n = 60;
     char sb[n];
     std::fill_n (sb, n, '-');
@@ -51,34 +52,7 @@ static inline void trim(string &s) {
     s.erase(n - (n - idx - 1));
 }
 
-void printStart(string &filename);
-
-void printUsage();
-
-string menuLoop();
-
-bool detectAgain();
-
-bool selectedExit(string &selection);
-
-void printStart(string &filename) {
-    stringstream ss;
-    ss << sectionBreak() << endl;
-    ss << "\n* WELCOME TO THE CODE SMELL DETECTOR *\n\n";
-    ss << sectionBreak() << endl;
-
-    ss << "FILE\n" << filename << endl << endl;
-    ss << "INSTRUCTIONS\n";
-    ss << "1. Select the code smell to detect\n";
-    ss << "2. ENTER to scan all functions\n   OR \n   enter the function names + ENTER\n";
-    ss << "     eg. myFunc1, myFunc2\n";
-    ss << sectionBreak() << endl;
-    ss << "FUNCTION LIST\n";
-    ss << sectionBreak() << endl;
-    cout << ss.str();
-}
-
-void printUsage() {
+static inline void printUsage() {
     string compileCommand = "$ g++ main.cpp -o smelldetector";
     string runCommand = "$ ./smelldetector pathToFile";
     string localExample = "$ smelldetector stinkyFile.cpp";
@@ -96,6 +70,41 @@ void printUsage() {
     cout << ss.str() << "\n";
 }
 
+static inline void printStart(string &filename) {
+    stringstream ss;
+    ss << sectionBreak() << endl;
+    ss << "\n* WELCOME TO THE CODE SMELL DETECTOR *\n\n";
+    ss << sectionBreak() << endl;
+
+    ss << "FILE\n" << filename << endl << endl;
+    ss << "INSTRUCTIONS\n";
+    ss << "1. Select the code smell to detect\n";
+    ss << "2. ENTER to scan all functions\n   OR \n   enter the function names + ENTER\n";
+    ss << "     eg. myFunc1, myFunc2\n";
+    ss << sectionBreak() << endl;
+    ss << "FUNCTION LIST\n";
+    ss << sectionBreak() << endl;
+    cout << ss.str();
+}
+
+string menuLoop();
+
+void printFunctionNames(vector<Function> &functions);
+
+void handleSelection(string &key, Detector &detect);
+
+vector<string> parseTokens(string& input);
+
+vector<string> getFunctionNumbers();
+
+string LMResults(Detector& d);
+
+void printResults(string &key, Detector &detect);
+
+bool detectAgain();
+
+bool selectedExit(string &selection);
+
 string menuLoop() {
     cout << sectionBreak() << endl;
     cout << "SELECT SMELL\n";
@@ -109,7 +118,7 @@ string menuLoop() {
     if (selectedExit(selection)) {
         exit(0);
     }
-    if (selection == "1") return LM;
+    if (selection == "1") return LF;
     if (selection == "2") return LPL;
     if (selection == "3") return DC;
 }
@@ -122,6 +131,35 @@ void printFunctionNames(vector<Function> &functions) {
     }
 }
 
+void handleSelection(string &key, Detector &detect) {
+    cout << sectionBreak() << endl;
+    cout << key << " ANALYSIS" << endl;
+    cout << sectionBreak() << endl;
+    if (key == DC) {
+        cout << "CALL DC HERE" << endl;
+        return;
+    }
+    vector<string> functionNums = getFunctionNumbers();
+
+    if (functionNums.size() == 1 && functionNums[0] == "0") {
+        detect.functions = detect.functionList;
+    } else {
+        for (const auto & functionNum : functionNums) {
+            int functNum = stoi(functionNum);
+            Function& f = detect.functionList[functNum - 1];
+            detect.functions.push_back(f);
+        }
+    }
+
+    if (key == LF) {
+        detect.detectLongMethods();
+
+//        for (const auto & function : detect.functions) {
+//            cout << function << endl;
+//        }
+    }
+}
+
 vector<string> parseTokens(string& input) {
     auto const reg = std::regex{R"(\s+|,\s+)"};
     auto tokens = vector<std::string>(
@@ -131,28 +169,50 @@ vector<string> parseTokens(string& input) {
     return tokens;
 }
 
-string selectFunctions(string& key) {
-    cout << sectionBreak() << endl;
-    cout << key << " ANALYSIS" << endl;
-    cout << sectionBreak() << endl;
-    if (key == LM || key == LPL) {
+vector<string> getFunctionNumbers() {
         cout << "To analyze ALL functions, press 0 + ENTER" << endl;
         cout << "To analyze specific methods, enter their number separated by\ncomma and press ENTER" << endl;
         cout << "Example: 1, 2, 4 + ENTER" << endl;
         string selections;
         cin >> ws;
         getline(cin, selections);
-        vector<string> functionsToSmell = parseTokens(selections);
+        return parseTokens(selections);
+}
 
-        if (key == LM) {
-            cout << "CALL LM here" << endl;
+bool selectedExit(string &selection) {
+    return selection == "exit" || selection == "EXIT" || selection == "Exit";
+}
+
+string LMResults(Detector& d) {
+    int lmCount = 0;
+    stringstream ss;
+    for (auto& f : d.functions) {
+        if (f.longmethod) {
+            lmCount++;
+            ss << f.handle << " is a Long Function. ";
+            ss << "It contains " << f.loc << " lines. ";
         }
-        else if (key == LPL) {
-            cout << "CALL LPL here" << endl;
-        }
-    } else if (key == DC) {
-        cout << "CALL DC HERE" << endl;
     }
+    if (lmCount == 0) {
+        ss << "No function is a Long Function." << endl;
+    }
+
+    return ss.str();
+}
+
+void printResults(string &key, Detector &detect) {
+    stringstream ss;
+    ss << sectionBreak() << endl;
+    ss << "\nRESULTS\n\n";
+    ss << sectionBreak() << endl;
+    if (key == LF) {
+        ss << LMResults(detect);
+    } else if (key == LPL) {
+        ss << LMResults(detect);
+    } else if (key == DC) {
+        ss << LMResults(detect);
+    }
+    cout << ss.str() << endl;
 }
 
 bool detectAgain() {
@@ -165,10 +225,6 @@ bool detectAgain() {
     cin >> ws;
     getline(cin, selection);
     return !(selectedExit(selection));
-}
-
-bool selectedExit(string &selection) {
-    return selection == "exit" || selection == "EXIT" || selection == "Exit";
 }
 
 int main(int argc, char *argv[]) {
@@ -188,9 +244,9 @@ int main(int argc, char *argv[]) {
     }
     inFile.close();
     Detector detect = Detector(filepath);
-//    printStart(filepath);
-//    printFunctionNames(detect.functionList);
-//    string selection = menuLoop();
-//    selectFunctions(selection);
-    detect.isLongMethod(detect.functionList[0]);
+    printStart(filepath);
+    printFunctionNames(detect.functionList);
+    string selection = menuLoop();
+    handleSelection(selection, detect);
+    printResults(selection, detect);
 }
