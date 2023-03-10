@@ -38,6 +38,12 @@ void StringUtility::rtrimWhitespace(string &s) {
     }).base(), s.end());
 }
 
+void StringUtility::trimWhitespace(string &s) {
+    ltrimWhitespace(s);
+    rtrimWhitespace(s);
+}
+
+
 void StringUtility::trimToSignature(string &s) {
     rtrimWhitespace(s);
     ltrimWhitespace(s);
@@ -69,6 +75,7 @@ void StringUtility::trimToHandle(string &s) {
     trimReturnType(s);
     trimParameters(s);
 }
+
 
 
 
