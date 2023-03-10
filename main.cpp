@@ -19,6 +19,7 @@ using namespace std;
 const string LF = "LONG FUNCTION";
 const string LPL = "LONG PARAMETER METHOD";
 const string DC = "DUPLICATED CODE";
+constr string INV = "INVALD";
 const string EXIT = "exit";
 const string ALLONALL = "DETECTORS ON ALL METHODS";
 const map<string, string> MENU_OPTIONS = {{"1", LF}, {"2", LPL},
@@ -121,6 +122,7 @@ string menuLoop() {
     if (selection == "1") return LF;
     if (selection == "2") return LPL;
     if (selection == "3") return DC;
+    return INV;
 }
 
 void printFunctionNames(vector<Function> &functions) {
