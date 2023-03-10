@@ -1,6 +1,7 @@
 #include "Function.h"
 #include "StringUtility.h"
 #include <iostream>
+#include <algorithm>
 #include <fstream>
 #include<sstream>
 #include <vector>
@@ -71,7 +72,7 @@ void Detector::buildFunctionList() {
             continue;
         }
         if (hasParenthesesPair(line)) {
-            this->functionList.emplace_back(line, lineNo);
+            this->masterFunctionList.emplace_back(line, lineNo);
         }
     }
     inFile.close();
@@ -125,7 +126,7 @@ bool Detector::isLongMethod(Function &function) const {
             function.end = lineNo - 1;
             function.loc = function.end - function.start + 1;
             if (function.loc > LONG_METHOD_THRESHOLD) {
-                function.longmethod = true;
+                function.longFunction = true;
                 return true;
             }
             break;
@@ -136,8 +137,28 @@ bool Detector::isLongMethod(Function &function) const {
 }
 
 void Detector::detectLongMethods() {
-    for (auto &f: this->functions) {
+    for (auto &f: this->functionsToAnalyze) {
         isLongMethod(f);
+    }
+}
+
+void Detector::detectLongParameterList() {
+    for (auto &f: this->functionsToAnalyze) {
+        isLongParameterList(f);
+    }
+}
+
+void Detector::isLongParameterList(Function &function) {
+    const int LPL_MAX = 3;
+    string sig = function.signature;
+    int numCommas = 0;
+    int startIdx = sig.find('(');
+    string::difference_type n = count(sig.begin(), sig.end(), ',');
+    function.paramCount = n + 1;
+    if (function.paramCount <= LPL_MAX) {
+        function.longParam = false;
+    } else {
+        function.longParam = true;
     }
 }
 
