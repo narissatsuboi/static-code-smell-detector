@@ -30,12 +30,8 @@ bool Detector::isDelimiter(char &c) {
 }
 
 bool Detector::hasParenthesesPair(string &s) {
-    unordered_map<char, char> CLOSED({{')', '('},
-                                      {'}', '{'},
-                                      {']', '['}});
-    unordered_map<char, int> freq({{')', 0},
-                                   {'}', 0},
-                                   {']', 0}});
+    unordered_map<char, char> CLOSED({{')', '('}});
+    unordered_map<char, int> freq({{')', 0}});
     unordered_map<char, int>::iterator it;
     vector<char> stack = {};
     bool isBalanced = true;
@@ -100,15 +96,26 @@ bool Detector::isComment(string &s) {
 }
 
 bool Detector::isLongMethod(Function &function) const {
+    findEOFunction(function);
+    function.loc = function.end - function.start + 1;
+    if (function.loc > LONG_METHOD_THRESHOLD) {
+        function.longFunction = true;
+        return true;
+    }
+    return false;
+}
+
+void Detector::findEOFunction(Function &function) const {
     const unordered_set<char> delims({'}', '{'});
     ifstream inFile(this->file);
     string line;
     int lineNo = 0;
     int matchesMade = 0;
     unordered_map<char, char> CLOSED({{'}', '{'}});
-
+    bool EOFFound = false;
     vector<char> stack = {};
     do {
+        getline(inFile, line);
         lineNo++;
         if (lineNo < function.start) {
             continue;
@@ -125,17 +132,11 @@ bool Detector::isLongMethod(Function &function) const {
                 stack.push_back(c);
         }
         if (stack.empty() && matchesMade > 0) {
-            function.end = lineNo - 1;
-            function.loc = function.end - function.start + 1;
-            if (function.loc > LONG_METHOD_THRESHOLD) {
-                function.longFunction = true;
-                return true;
-            }
-            break;
+            function.end = lineNo;
+            EOFFound = true;
         }
-    } while (getline(inFile, line));
+    } while (!EOFFound);
     inFile.close();
-    return false;
 }
 
 void Detector::detectLongMethods() {
@@ -163,6 +164,8 @@ void Detector::isLongParameterList(Function &function) {
         function.longParam = true;
     }
 }
+
+
 
 
 

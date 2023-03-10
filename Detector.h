@@ -32,6 +32,8 @@ public:
 
     void buildFunctionList();
 
+    void findEOFunction(Function &function) const;
+
     void detectLongMethods();
 
     bool isLongMethod(Function &function) const;

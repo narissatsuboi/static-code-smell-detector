@@ -270,12 +270,22 @@ int main(int argc, char *argv[]) {
         Detector detect = Detector(filepath);
         printStart(filepath);
         printFunctionNames(detect.masterFunctionList);
+
+        // eof work
+//        Function &f = detect.masterFunctionList[0];
+//        cout << f << endl;
+//        detect.findEOFunction(f);
+//        cout << f << endl;
+
+
+        // eof work end
         string selection = menuLoop();
         handleSelection(selection, detect);
         printResults(selection, detect);
         if(!detectAgain()) {
             keepSmelling = false;
         }
+        keepSmelling = false;
     }
 
     printExit();
