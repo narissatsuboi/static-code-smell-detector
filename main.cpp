@@ -24,7 +24,7 @@ const string DC = "DUPLICATED CODE";
 const string INV = "INVALD";
 const string EXIT = "exit";
 const string ALLONALL = "DETECTORS ON ALL METHODS";
-const map<string, string> MENU_OPTIONS = {{"1", LF},
+map<string, string> MENU_OPTIONS = {{"1", LF},
                                           {"2", LPL},
                                           {"3", DC},
                                           {"4", ALLONALL}};
@@ -48,19 +48,16 @@ static inline void printUsage() {
 }
 
 static inline void printStart(string &filename) {
+    string welcomeBannerContent = "* WELCOME TO THE CODE SMELL DETECTOR *";
+    string listBannerContent = "FUNCTION LIST";
     stringstream ss;
-    ss << StringUtility::sectionBreak(BREAKLEN) << endl;
-    ss << "\n* WELCOME TO THE CODE SMELL DETECTOR *\n\n";
-    ss << StringUtility::sectionBreak(BREAKLEN) << endl;
-
+    ss << StringUtility::banner(welcomeBannerContent);
     ss << "FILE\n" << filename << endl << endl;
     ss << "INSTRUCTIONS\n";
     ss << "1. Select the code smell to detect\n";
     ss << "2. ENTER to scan all functions\n   OR \n   enter the function names + ENTER\n";
     ss << "     eg. myFunc1, myFunc2\n";
-    ss << StringUtility::sectionBreak(BREAKLEN) << endl;
-    ss << "FUNCTION LIST\n";
-    ss << StringUtility::sectionBreak(BREAKLEN) << endl;
+    ss << StringUtility::banner(listBannerContent);
     cout << ss.str();
 }
 
@@ -72,7 +69,7 @@ void handleSelection(string &key, Detector &detect);
 
 vector<string> parseTokens(string &input);
 
-vector<string> getFunctionNumbers();
+vector<string> getFunctionNumbers(int numFunctions);
 
 string LMResults(Detector &d);
 
@@ -80,25 +77,25 @@ void printResults(string &key, Detector &detect);
 
 bool detectAgain();
 
-bool selectedExit(string &selection);
-
 string menuLoop() {
-    cout << StringUtility::sectionBreak(BREAKLEN) << endl;
-    cout << "SELECT SMELL\n";
-    cout << StringUtility::sectionBreak(BREAKLEN) << endl;
+    string bannerContent = "SELECT SMELL";
+    cout << StringUtility::banner(bannerContent);
     for (const auto &[key, value]: MENU_OPTIONS) {
         cout << ">> " << key << " : " << value << "\n";
     }
+    bool validSelection = true;
     string selection;
-    cin >> ws;
-    getline(cin, selection);
-    if (selectedExit(selection)) {
-        exit(0);
-    }
-    if (selection == "1") return LF;
-    if (selection == "2") return LPL;
-    if (selection == "3") return DC;
-    return INV;
+    do {
+        cin >> ws;
+        getline(cin, selection);
+        if (MENU_OPTIONS.count(selection)) {
+            return MENU_OPTIONS[selection];
+        } else {
+            cout << "*** Invalid selection, please try again. ***" << endl;
+            validSelection = false;
+        }
+    } while(!validSelection);
+    return selection;
 }
 
 void printFunctionNames(vector<Function> &functions) {
@@ -111,14 +108,14 @@ void printFunctionNames(vector<Function> &functions) {
 }
 
 void handleSelection(string &key, Detector &detect) {
-    cout << StringUtility::sectionBreak(BREAKLEN) << endl;
-    cout << key << " ANALYSIS" << endl;
-    cout << StringUtility::sectionBreak(BREAKLEN) << endl;
+    int totalNumFunctions = detect.functionList.size();
+    string bannerContent = key + " ANALYSIS";
+    cout << StringUtility::banner(bannerContent);
     if (key == DC) {
         cout << "CALL DC HERE" << endl;
         return;
     }
-    vector<string> functionNums = getFunctionNumbers();
+    vector<string> functionNums = getFunctionNumbers(totalNumFunctions);
 
     if (functionNums.size() == 1 && functionNums[0] == "0") {
         detect.functions = detect.functionList;
@@ -144,18 +141,29 @@ vector<string> parseTokens(string &input) {
     return tokens;
 }
 
-vector<string> getFunctionNumbers() {
+vector<string> getFunctionNumbers(int numFunctions) {
     cout << "To analyze ALL functions, press 0 + ENTER" << endl;
     cout << "To analyze specific methods, enter their number separated by\ncomma and press ENTER" << endl;
     cout << "Example: 1, 2, 4 + ENTER" << endl;
     string selections;
-    cin >> ws;
-    getline(cin, selections);
-    return parseTokens(selections);
-}
+    bool validFunction = true;
+    vector<string> functionNums;
+    do {
+        cin >> ws;
+        getline(cin, selections);
+        functionNums = parseTokens(selections);
+        for (auto &fn: functionNums) {
+            if (stoi(fn) < 1 || stoi(fn) > numFunctions) {
+                validFunction = false;
+                break;
+            } else {
+                validFunction = true;
+            }
+        }
+        cout << "*** Invalid function number, please try again. ***" << endl;
+    } while(!validFunction);
 
-bool selectedExit(string &selection) {
-    return selection == "exit" || selection == "EXIT" || selection == "Exit";
+    return functionNums;
 }
 
 string LMResults(Detector &d) {
@@ -176,10 +184,9 @@ string LMResults(Detector &d) {
 }
 
 void printResults(string &key, Detector &detect) {
+    string bannerContent = "RESULTS";
     stringstream ss;
-    ss << StringUtility::sectionBreak(BREAKLEN) << endl;
-    ss << "\nRESULTS\n\n";
-    ss << StringUtility::sectionBreak(BREAKLEN) << endl;
+    ss << StringUtility::banner(bannerContent);
     if (key == LF) {
         ss << LMResults(detect);
     } else if (key == LPL) {
@@ -190,16 +197,29 @@ void printResults(string &key, Detector &detect) {
     cout << ss.str() << endl;
 }
 
+
+void printExit() {
+    stringstream ss;
+    string bannerContent = "GOODBYE!";
+    ss << endl;
+    ss << StringUtility::banner(bannerContent);
+    cout << ss.str();
+}
+
 bool detectAgain() {
+    unordered_set<string> exit = {{"No", "NO", "no", "nO", "n", "N"}};
     stringstream ss;
     ss << "\n";
     ss << "Would you like to detect again?" << "\n";
-    ss << "Yes or Exit?   ";
+    ss << "Enter any key to continue + Enter OR \"No\" + Enter to exit.\n";
     cout << ss.str();
     string selection;
     cin >> ws;
     getline(cin, selection);
-    return !(selectedExit(selection));
+    if (exit.count(selection)) {
+        return false;
+    }
+    return true;
 }
 
 int main(int argc, char *argv[]) {
@@ -209,19 +229,29 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    string filepath = argv[1];
-    ifstream inFile(filepath);
-    if (!inFile.is_open()) {
-        cout << "\n" << "ERROR" << "\n";
-        cout << "Could not open file at path: " << argv[1] << "\n";
-        printUsage();
-        exit(1);
+    bool keepSmelling = true;
+    while(keepSmelling) {
+        string filepath = argv[1];
+        ifstream inFile(filepath);
+        if (!inFile.is_open()) {
+            cout << "\n" << "ERROR" << "\n";
+            cout << "Could not open file at path: " << argv[1] << "\n";
+            printUsage();
+            exit(1);
+        }
+        inFile.close();
+
+        Detector detect = Detector(filepath);
+        printStart(filepath);
+        printFunctionNames(detect.functionList);
+        string selection = menuLoop();
+        handleSelection(selection, detect);
+        printResults(selection, detect);
+        if(!detectAgain()) {
+            keepSmelling = false;
+        }
     }
-    inFile.close();
-    Detector detect = Detector(filepath);
-    printStart(filepath);
-    printFunctionNames(detect.functionList);
-    string selection = menuLoop();
-    handleSelection(selection, detect);
-    printResults(selection, detect);
+
+    printExit();
+    exit(0);
 }
