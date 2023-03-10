@@ -19,7 +19,7 @@ using namespace std;
 const string LF = "LONG FUNCTION";
 const string LPL = "LONG PARAMETER METHOD";
 const string DC = "DUPLICATED CODE";
-constr string INV = "INVALD";
+const string INV = "INVALD";
 const string EXIT = "exit";
 const string ALLONALL = "DETECTORS ON ALL METHODS";
 const map<string, string> MENU_OPTIONS = {{"1", LF}, {"2", LPL},
