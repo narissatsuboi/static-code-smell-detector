@@ -6,6 +6,9 @@
 
 using namespace std;
 
+void LPLfunction(string& a, int b, int c, int d);
+
+
 int easyMethod() {
     if (true) {
         cout << "yeehaw";

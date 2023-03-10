@@ -5,29 +5,24 @@
 
 #include "StringUtility.h"
 #include "Detector.h"
-#include <algorithm>
 #include <iostream>
-#include <fstream>
 #include <vector>
 #include <map>
 #include <unordered_set>
-#include <unordered_map>
-#include <regex>
-#include <set>
 
 using namespace std;
 
+/* GLOBALS */
 const int BREAKLEN = 60;
-const string LF = "LONG FUNCTION";
-const string LPL = "LONG PARAMETER METHOD";
-const string DC = "DUPLICATED CODE";
-const string INV = "INVALD";
-const string EXIT = "exit";
-const string ALLONALL = "DETECTORS ON ALL METHODS";
-map<string, string> MENU_OPTIONS = {{"1", LF},
-                                          {"2", LPL},
-                                          {"3", DC},
-                                          {"4", ALLONALL}};
+const string LF = "LONG METHOD/FUNCTION DETECTION";
+const string LPL = "LONG PARAMETER LIST DETECTION";
+const string DC = "DUPLICATED CODE DETECTION";
+const string QUIT = "QUIT";
+map<string, string> MENU_OPTIONS = {{"1", LF}, {"2", LPL},
+                                    {"3", DC},
+                                          {"4", QUIT}};
+
+/* INLINE FUNCTIONS */
 
 static inline void printUsage() {
     string compileCommand = "$ g++ main.cpp -o smelldetector";
@@ -55,11 +50,13 @@ static inline void printStart(string &filename) {
     ss << "FILE\n" << filename << endl << endl;
     ss << "INSTRUCTIONS\n";
     ss << "1. Select the code smell to detect\n";
-    ss << "2. ENTER to scan all functions\n   OR \n   enter the function names + ENTER\n";
+    ss << "2. ENTER to scan all functionsToAnalyze\n   OR \n   enter the function names + ENTER\n";
     ss << "     eg. myFunc1, myFunc2\n";
     ss << StringUtility::banner(listBannerContent);
     cout << ss.str();
 }
+
+/* DECLARATIONS */
 
 string menuLoop();
 
@@ -73,9 +70,15 @@ vector<string> getFunctionNumbers(int numFunctions);
 
 string LMResults(Detector &d);
 
+string LPLResults(Detector &d);
+
 void printResults(string &key, Detector &detect);
 
 bool detectAgain();
+
+void printExit();
+
+/* DEFINITIONS */
 
 string menuLoop() {
     string bannerContent = "SELECT SMELL";
@@ -102,33 +105,48 @@ void printFunctionNames(vector<Function> &functions) {
     int i = 1;
     // toDo
     for (const auto &function: functions) {
-        cout << i << " " << function.handle << endl;
+        cout << i << ". " << function.handle << endl;
         i++;
     }
 }
 
 void handleSelection(string &key, Detector &detect) {
-    int totalNumFunctions = detect.functionList.size();
+    if (key == QUIT) {  // exit on QUIT from user
+        printExit();
+        exit(0);
+    }
+
+    // analysis start
     string bannerContent = key + " ANALYSIS";
     cout << StringUtility::banner(bannerContent);
-    if (key == DC) {
-        cout << "CALL DC HERE" << endl;
-        return;
-    }
+
+    // fill Detector's function list based on user input
+    int totalNumFunctions = detect.masterFunctionList.size();
     vector<string> functionNums = getFunctionNumbers(totalNumFunctions);
 
-    if (functionNums.size() == 1 && functionNums[0] == "0") {
-        detect.functions = detect.functionList;
-    } else {
+    // analyze all functionsToAnalyze if duplicate code or user selected all functionsToAnalyze
+    if (key == "DC" || (functionNums.size() == 1 && functionNums[0] == "0")) {
+        detect.functionsToAnalyze = detect.masterFunctionList;
+    } else { // custom pick from master list
         for (const auto &functionNum: functionNums) {
             int functNum = stoi(functionNum);
-            Function &f = detect.functionList[functNum - 1];
-            detect.functions.push_back(f);
+            Function &f = detect.masterFunctionList[functNum - 1];
+            detect.functionsToAnalyze.push_back(f);
         }
     }
 
+    // perform analysis
     if (key == LF) {
         detect.detectLongMethods();
+    }
+
+    if (key == LPL) {
+        detect.detectLongParameterList();
+    }
+
+    if (key == DC) {
+        cout << "CALL DC HERE" << endl;
+        return;
     }
 }
 
@@ -142,7 +160,7 @@ vector<string> parseTokens(string &input) {
 }
 
 vector<string> getFunctionNumbers(int numFunctions) {
-    cout << "To analyze ALL functions, press 0 + ENTER" << endl;
+    cout << "To analyze ALL functionsToAnalyze, press 0 + ENTER" << endl;
     cout << "To analyze specific methods, enter their number separated by\ncomma and press ENTER" << endl;
     cout << "Example: 1, 2, 4 + ENTER" << endl;
     string selections;
@@ -153,14 +171,14 @@ vector<string> getFunctionNumbers(int numFunctions) {
         getline(cin, selections);
         functionNums = parseTokens(selections);
         for (auto &fn: functionNums) {
-            if (stoi(fn) < 1 || stoi(fn) > numFunctions) {
+            if (stoi(fn) < 0 || stoi(fn) > numFunctions) {
                 validFunction = false;
+                cout << "*** Invalid function number, please try again. ***" << endl;
                 break;
             } else {
                 validFunction = true;
             }
         }
-        cout << "*** Invalid function number, please try again. ***" << endl;
     } while(!validFunction);
 
     return functionNums;
@@ -169,17 +187,31 @@ vector<string> getFunctionNumbers(int numFunctions) {
 string LMResults(Detector &d) {
     int lmCount = 0;
     stringstream ss;
-    for (auto &f: d.functions) {
-        if (f.longmethod) {
+    for (auto &f: d.functionsToAnalyze) {
+        if (f.longFunction) {
             lmCount++;
-            ss << f.signature << " is a Long Function. ";
-            ss << "It contains " << f.loc << " lines. ";
+            ss << f.handle << " is a Long Function. ";
+            ss << "It contains " << f.loc << " lines. " << endl;
         }
     }
     if (lmCount == 0) {
         ss << "No function is a Long Function." << endl;
     }
-
+    return ss.str();
+}
+string LPLResults(Detector &d) {
+    int lplcount = 0;
+    stringstream ss;
+    for (auto &f: d.functionsToAnalyze) {
+        if (f.longParam) {
+            lplcount++;
+            ss << f.handle << " has a Long Parameter List. Its paramter list contains ";
+            ss << f.paramCount << " parameters." << endl;
+        }
+    }
+    if (lplcount == 0) {
+        ss << "No function has a Long Parameter List" << endl;
+    }
     return ss.str();
 }
 
@@ -190,13 +222,12 @@ void printResults(string &key, Detector &detect) {
     if (key == LF) {
         ss << LMResults(detect);
     } else if (key == LPL) {
-        ss << LMResults(detect);
+        ss << LPLResults(detect);
     } else if (key == DC) {
         ss << LMResults(detect);
     }
     cout << ss.str() << endl;
 }
-
 
 void printExit() {
     stringstream ss;
@@ -243,7 +274,7 @@ int main(int argc, char *argv[]) {
 
         Detector detect = Detector(filepath);
         printStart(filepath);
-        printFunctionNames(detect.functionList);
+        printFunctionNames(detect.masterFunctionList);
         string selection = menuLoop();
         handleSelection(selection, detect);
         printResults(selection, detect);

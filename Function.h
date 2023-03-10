@@ -21,19 +21,16 @@ public:
     int start{};
     int end{};
     int loc{};
-    bool longmethod{};
-    int paramCount{};
-    bool longparams{};
-    bool dupcode{};
+    bool longFunction{};
+    int paramCount;
+    bool longParam{};
+    bool dupCode{};
 
     Function();
 
     Function(string &fullSignature, int &startLine);
 
     void format();
-
-    bool dupCode();
-
 
     friend ostream &operator<<(ostream &os, const Function &func);
 };

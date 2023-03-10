@@ -14,11 +14,11 @@ class Detector
 public:
     explicit Detector(string &filepath);
 
-    vector<Function> functionList;
-    vector<Function> functions;
+    vector<Function> masterFunctionList;
+    vector<Function> functionsToAnalyze;
     string file;
 
-    bool skipLine(string &s);
+    bool skipLine(string &line);
 
     static bool hasInvalidFirstToken(string &s);
 
@@ -35,6 +35,11 @@ public:
     void detectLongMethods();
 
     bool isLongMethod(Function &function) const;
+
+    void detectLongParameterList();
+
+    void isLongParameterList(Function & function);
+
 
 };
 
