@@ -6,15 +6,24 @@
 #include "StringUtility.h"
 #include <string>
 #include <algorithm>
+#include <sstream>
 
 
 using namespace std;
-
 
 string StringUtility::sectionBreak(int l) {
     char sb[l];
     std::fill_n (sb, l, '-');
     return sb;
+}
+
+string StringUtility::banner(string &content) {
+    stringstream ss;
+    int BANNERLEN = 60;
+    ss << sectionBreak(BANNERLEN) <<endl;
+    ss << content << endl;
+    ss << sectionBreak(BANNERLEN) <<endl;
+    return ss.str();
 }
 
 void StringUtility::ltrimWhitespace(string &s) {
@@ -60,6 +69,7 @@ void StringUtility::trimToHandle(string &s) {
     trimReturnType(s);
     trimParameters(s);
 }
+
 
 
 
