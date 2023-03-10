@@ -30,12 +30,8 @@ bool Detector::isDelimiter(char &c) {
 }
 
 bool Detector::hasParenthesesPair(string &s) {
-    unordered_map<char, char> CLOSED({{')', '('},
-                                      {'}', '{'},
-                                      {']', '['}});
-    unordered_map<char, int> freq({{')', 0},
-                                   {'}', 0},
-                                   {']', 0}});
+    unordered_map<char, char> CLOSED({{')', '('}});
+    unordered_map<char, int> freq({{')', 0}});
     unordered_map<char, int>::iterator it;
     vector<char> stack = {};
     bool isBalanced = true;
