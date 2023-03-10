@@ -12,15 +12,18 @@ class StringUtility
 {
 
 private:
-    static void ltrimWhitespace(string &s);
-
-    static void rtrimWhitespace(string &s);
 
     static void trimReturnType(string & s);
 
     static void trimParameters(string& s);
 
+    static void rtrimWhitespace(string &s);
+
+    static void ltrimWhitespace(string &s);
+
 public:
+
+    static void trimWhitespace(string &s);
 
     static string banner(string & content);
 

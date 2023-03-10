@@ -18,17 +18,17 @@ public:
     vector<Function> functionsToAnalyze;
     string file;
 
-    bool skipLine(string &line);
+    static bool skipLine(string &line);
 
     static bool hasInvalidFirstToken(string &s);
 
-    bool hasParenthesesPair(string &s);
+    static bool hasParenthesesPair(string &s);
 
     static bool isBlankLine(string &s);
 
     static bool isComment(string &s);
 
-    bool isDelimiter(char &c);
+    static bool isDelimiter(char &c);
 
     void buildFunctionList();
 
@@ -38,7 +38,7 @@ public:
 
     void detectLongParameterList();
 
-    void isLongParameterList(Function & function);
+    static void isLongParameterList(Function & function);
 
 
 };

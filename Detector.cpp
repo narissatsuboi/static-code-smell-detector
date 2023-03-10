@@ -67,6 +67,7 @@ void Detector::buildFunctionList() {
     ifstream inFile(this->file);
     while (getline(inFile, line)) {
         lineNo++;
+        // TODO CONFIRM NOT A DECLARATION
         StringUtility::trimToSignature(line);
         if (skipLine(line)) {
             continue;
@@ -83,8 +84,9 @@ bool Detector::skipLine(string &line) {
 }
 
 bool Detector::hasInvalidFirstToken(string &s) {
-    const unordered_set <string> INVALID({"case", "class", "else", "if", "struct", "switch", "return", "throw", "while"});
-    string token = s.substr(0, s.find_first_of(' '));
+    const unordered_set <string> INVALID({"case", "class", "for", "else", "if", "struct", "switch", "return", "throw", "while"});
+    string token = s.substr(0, s.find_first_of('('));
+    StringUtility::trimWhitespace(token);
     return INVALID.count(token);
 }
 

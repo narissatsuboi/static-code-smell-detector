@@ -13,7 +13,6 @@
 using namespace std;
 
 /* GLOBALS */
-const int BREAKLEN = 60;
 const string LF = "LONG METHOD/FUNCTION DETECTION";
 const string LPL = "LONG PARAMETER LIST DETECTION";
 const string DC = "DUPLICATED CODE DETECTION";
@@ -48,10 +47,6 @@ static inline void printStart(string &filename) {
     stringstream ss;
     ss << StringUtility::banner(welcomeBannerContent);
     ss << "FILE\n" << filename << endl << endl;
-    ss << "INSTRUCTIONS\n";
-    ss << "1. Select the code smell to detect\n";
-    ss << "2. ENTER to scan all functionsToAnalyze\n   OR \n   enter the function names + ENTER\n";
-    ss << "     eg. myFunc1, myFunc2\n";
     ss << StringUtility::banner(listBannerContent);
     cout << ss.str();
 }
