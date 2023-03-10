@@ -29,6 +29,7 @@ ostream &operator<<(ostream &os, const Function &func) {
     os << StringUtility::sectionBreak(30) << endl;
     os << func.signature << endl;
     os << StringUtility::sectionBreak(30) << endl;
+    os << "range:  " << func.start << ", " << func.end << endl;
     os << "handle: " << func.handle << endl;
     os << "LF    : " << func.longFunction << endl;
     os << "loc:    " << func.loc << endl;
