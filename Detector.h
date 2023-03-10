@@ -13,6 +13,7 @@ class Detector
 {
 public:
     explicit Detector(string &filepath);
+
     vector<Function> functionList;
     vector<Function> functions;
     string file;
@@ -36,5 +37,7 @@ public:
     bool isLongMethod(Function &function) const;
 
 };
+
+#include "Detector.cpp"
 
 #endif //SNIFFY_DETECTOR_H

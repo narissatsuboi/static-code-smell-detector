@@ -4,31 +4,36 @@
  */
 
 #include "Function.h"
+#include "StringUtility.h"
 #include <iostream>
 #include <vector>
 #include <regex>
 
 using namespace std;
 
-static inline string sectionBreak() {
-    int n = 30;
-    char sb[n];
-    std::fill_n (sb, n, '-');
-    return sb;
-}
 
 Function::Function() = default;
 
-Function::Function(int &startLine, string &name, string &fullSignature) {
-    this->handle = name;
+Function::Function(string &fullSignature, int &startLine) {
+    this->signature = fullSignature;
     this->start = startLine;
+    format();
 }
 
-ostream& operator<<(ostream &os, const Function &func) {
-    os << sectionBreak() << endl;
-    os << func.handle << endl;
-    os << sectionBreak() << endl;
+void Function::format() {
+    string tempHandle = this->signature;
+    StringUtility::trimToHandle(tempHandle);
+    this->handle = tempHandle;
+}
+
+
+ostream &operator<<(ostream &os, const Function &func) {
+    os << StringUtility::sectionBreak(30) << endl;
+    os << func.signature << endl;
+    os << StringUtility::sectionBreak(30) << endl;
     os << "loc:    " << func.loc << endl;
     os << "params: " << func.paramCount << endl;
     return os;
 }
+
+
