@@ -15,7 +15,9 @@ class Function
 private:
 
 public:
+    string signature;
     string handle;
+    string params;
     int start{};
     int end{};
     int loc{};
@@ -26,12 +28,16 @@ public:
 
     Function();
 
-    Function(int &startLine, string &name, string &fullSignature);
+    Function(string &fullSignature, int &startLine);
+
+    void format();
 
     bool dupCode();
 
 
-
-    friend ostream& operator<<(ostream& os, const Function& func);
+    friend ostream &operator<<(ostream &os, const Function &func);
 };
+
+#include "Function.cpp"
+
 #endif //SNIFFY_FUNCTION_H

@@ -1,4 +1,5 @@
 #include "Function.h"
+#include "StringUtility.h"
 #include <iostream>
 #include <fstream>
 #include<sstream>
@@ -11,6 +12,7 @@
 #include <set>
 
 #include "Detector.h"
+
 const int LONG_METHOD_THRESHOLD = 15;
 
 const int LONG_PARAM_THRESHOLD = 3;
@@ -20,41 +22,6 @@ Detector::Detector(string &filepath) {
     buildFunctionList();
 }
 
-static inline void ltrim(string &s) {
-    s.erase(s.begin(), find_if(s.begin(), s.end(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }));
-}
-
-static inline void rtrim(string &s) {
-    s.erase(find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }).base(), s.end());
-}
-
-static inline void trim(string &s) {
-    rtrim(s);
-    ltrim(s);
-
-    // trim to lst ')'
-    size_t n = s.length();
-    size_t idx = s.find(')');
-    s.erase(n - (n - idx - 1));
-}
-
-static inline string trimToFunctionName(string &s) {
-    string functionName = s;
-    int endIdx = s.find('(');
-    int startIdx = 0;
-    for (int i = endIdx - 1; i >= 0; i--) {
-        if (isspace(s[i])) {
-            startIdx = i;
-            functionName = s.erase(0, startIdx + 1);
-            break;
-        }
-    }
-    return functionName;
-}
 
 bool Detector::isDelimiter(char &c) {
     const unordered_set<char> DELIMS({')', '(', '}', '{', ']', '['});
@@ -95,16 +62,16 @@ bool Detector::hasParenthesesPair(string &s) {
 void Detector::buildFunctionList() {
     string line, name;
     int lineNo = 0;
+    string fullSig, handle;
     ifstream inFile(this->file);
     while (getline(inFile, line)) {
         lineNo++;
-        trim(line);
+        StringUtility::trimToSignature(line);
         if (skipLine(line)) {
             continue;
         }
         if (hasParenthesesPair(line)) {
-            name = trimToFunctionName(line);
-            this->functionList.emplace_back(lineNo, name, line);
+            this->functionList.emplace_back(line, lineNo);
         }
     }
     inFile.close();
@@ -115,7 +82,7 @@ bool Detector::skipLine(string &line) {
 }
 
 bool Detector::hasInvalidFirstToken(string &s) {
-    const unordered_set<string> INVALID({"case", "class", "else", "if", "struct", "switch", "return", "throw", "while"});
+    const unordered_set <string> INVALID({"case", "class", "else", "if", "struct", "switch", "return", "throw", "while"});
     string token = s.substr(0, s.find_first_of(' '));
     return INVALID.count(token);
 }
@@ -138,7 +105,7 @@ bool Detector::isLongMethod(Function &function) const {
     unordered_map<char, char> CLOSED({{'}', '{'}});
 
     vector<char> stack = {};
-     do {
+    do {
         lineNo++;
         if (lineNo < function.start) {
             continue;
@@ -154,22 +121,22 @@ bool Detector::isLongMethod(Function &function) const {
             } else
                 stack.push_back(c);
         }
-         if (stack.empty() && matchesMade > 0) {
-             function.end = lineNo-1;
-             function.loc = function.end - function.start + 1;
-             if (function.loc > LONG_METHOD_THRESHOLD) {
-                 function.longmethod = true;
-                 return true;
-             }
-             break;
-         }
-    } while(getline(inFile, line));
+        if (stack.empty() && matchesMade > 0) {
+            function.end = lineNo - 1;
+            function.loc = function.end - function.start + 1;
+            if (function.loc > LONG_METHOD_THRESHOLD) {
+                function.longmethod = true;
+                return true;
+            }
+            break;
+        }
+    } while (getline(inFile, line));
     inFile.close();
     return false;
 }
 
 void Detector::detectLongMethods() {
-    for (auto& f : this->functions) {
+    for (auto &f: this->functions) {
         isLongMethod(f);
     }
 }
