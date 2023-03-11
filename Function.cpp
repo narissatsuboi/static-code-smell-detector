@@ -26,16 +26,16 @@ void Function::format() {
 }
 
 ostream &operator<<(ostream &os, const Function &func) {
-    os << StringUtility::sectionBreak(30) << endl;
-    os << func.signature << endl;
-    os << StringUtility::sectionBreak(30) << endl;
-    os << "range:  " << func.start << ", " << func.end << endl;
-    os << "handle: " << func.handle << endl;
-    os << "LF    : " << func.longFunction << endl;
-    os << "loc:    " << func.loc << endl;
-    os << "LPL   : " << func.longFunction << endl;
-    os << "params: " << func.paramCount << endl;
-    os << "DC    : " << func.dupCode << endl;
+    os << StringUtility::sectionBreak(30) << "\n";
+    os << func.signature << "\n";
+    os << StringUtility::sectionBreak(30) << "\n";
+    os << "range:  " << func.start << ", " << func.end << "\n";
+    os << "handle: " << func.handle << "\n";
+    os << "LF    : " << func.longFunction << "\n";
+    os << "loc:    " << func.loc << "\n";
+    os << "LPL   : " << func.longFunction << "\n";
+    os << "params: " << func.paramCount << "\n";
+    os << "DC    : " << func.dupCode << "\n";
 
     return os;
 }

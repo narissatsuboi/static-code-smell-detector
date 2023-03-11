@@ -47,7 +47,7 @@ static inline void printStart(string &filename) {
     string listBannerContent = "FUNCTION LIST";
     stringstream ss;
     ss << StringUtility::banner(welcomeBannerContent);
-    ss << "FILE\n" << filename << endl << endl;
+    ss << "FILE\n" << filename << "\n" << "\n";
     ss << StringUtility::banner(listBannerContent);
     cout << ss.str();
 }
@@ -90,7 +90,7 @@ string menuLoop() {
         if (MENU_OPTIONS.count(selection)) {
             return MENU_OPTIONS[selection];
         } else {
-            cout << "*** Invalid selection, please try again. ***" << endl;
+            cout << "*** Invalid selection, please try again. ***" << "\n";
             validSelection = false;
         }
     } while(!validSelection);
@@ -101,7 +101,7 @@ void printFunctionNames(vector<Function> &functions) {
     int i = 1;
     // toDo
     for (const auto &function: functions) {
-        cout << i << ". " << function.handle << endl;
+        cout << i << ". " << function.handle << "\n";
         i++;
     }
 }
@@ -141,7 +141,7 @@ void handleSelection(string &key, Detector &detect) {
     }
 
     if (key == DC) {
-        cout << "CALL DC HERE" << endl;
+        cout << "CALL DC HERE" << "\n";
         return;
     }
 }
@@ -156,9 +156,9 @@ vector<string> parseTokens(string &input) {
 }
 
 vector<string> getFunctionNumbers(int numFunctions) {
-    cout << "To analyze ALL functionsToAnalyze, press 0 + ENTER" << endl;
-    cout << "To analyze specific methods, enter their number separated by\ncomma and press ENTER" << endl;
-    cout << "Example: 1, 2, 4 + ENTER" << endl;
+    cout << "To analyze ALL functionsToAnalyze, press 0 + ENTER" << "\n";
+    cout << "To analyze specific methods, enter their number separated by\ncomma and press ENTER" << "\n";
+    cout << "Example: 1, 2, 4 + ENTER" << "\n";
     string selections;
     bool validFunction = true;
     vector<string> functionNums;
@@ -169,7 +169,7 @@ vector<string> getFunctionNumbers(int numFunctions) {
         for (auto &fn: functionNums) {
             if (stoi(fn) < 0 || stoi(fn) > numFunctions) {
                 validFunction = false;
-                cout << "*** Invalid function number, please try again. ***" << endl;
+                cout << "*** Invalid function number, please try again. ***" << "\n";
                 break;
             } else {
                 validFunction = true;
@@ -187,11 +187,11 @@ string LMResults(Detector &d) {
         if (f.longFunction) {
             lmCount++;
             ss << f.handle << " is a Long Function. ";
-            ss << "It contains " << f.loc << " lines. " << endl;
+            ss << "It contains " << f.loc << " lines. " << "\n";
         }
     }
     if (lmCount == 0) {
-        ss << "No function is a Long Function." << endl;
+        ss << "No function is a Long Function." << "\n";
     }
     return ss.str();
 }
@@ -202,11 +202,11 @@ string LPLResults(Detector &d) {
         if (f.longParam) {
             lplcount++;
             ss << f.handle << " has a Long Parameter List. Its paramter list contains ";
-            ss << f.paramCount << " parameters." << endl;
+            ss << f.paramCount << " parameters." << "\n";
         }
     }
     if (lplcount == 0) {
-        ss << "No function has a Long Parameter List" << endl;
+        ss << "No function has a Long Parameter List" << "\n";
     }
     return ss.str();
 }
@@ -222,13 +222,13 @@ void printResults(string &key, Detector &detect) {
     } else if (key == DC) {
         ss << LMResults(detect);
     }
-    cout << ss.str() << endl;
+    cout << ss.str() << "\n";
 }
 
 void printExit() {
     stringstream ss;
     string bannerContent = "GOODBYE!";
-    ss << endl;
+    ss << "\n";
     ss << StringUtility::banner(bannerContent);
     cout << ss.str();
 }
