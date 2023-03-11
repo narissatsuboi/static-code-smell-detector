@@ -20,9 +20,9 @@ string StringUtility::sectionBreak(int l) {
 string StringUtility::banner(string &content) {
     stringstream ss;
     int BANNERLEN = 60;
-    ss << sectionBreak(BANNERLEN) <<endl;
-    ss << content << endl;
-    ss << sectionBreak(BANNERLEN) <<endl;
+    ss << sectionBreak(BANNERLEN) <<"\n";
+    ss << content << "\n";
+    ss << sectionBreak(BANNERLEN) <<"\n";
     return ss.str();
 }
 
