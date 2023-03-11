@@ -164,8 +164,3 @@ void Detector::isLongParameterList(Function &function) {
         function.longParam = true;
     }
 }
-
-
-
-
-

@@ -5,6 +5,7 @@
 
 #include "StringUtility.h"
 #include "Detector.h"
+#include "Jaccard.h"
 #include <iostream>
 #include <vector>
 #include <map>
@@ -271,14 +272,6 @@ int main(int argc, char *argv[]) {
         printStart(filepath);
         printFunctionNames(detect.masterFunctionList);
 
-        // eof work
-//        Function &f = detect.masterFunctionList[0];
-//        cout << f << endl;
-//        detect.findEOFunction(f);
-//        cout << f << endl;
-
-
-        // eof work end
         string selection = menuLoop();
         handleSelection(selection, detect);
         printResults(selection, detect);
