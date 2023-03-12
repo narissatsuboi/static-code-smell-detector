@@ -17,25 +17,42 @@ const int LONG_PARAM_THRESHOLD = 3;
 
 const double DUP_CODE_THRESHOLD = 0.75;
 
+const char LPAREN = '(', RPAREN = ')';
+const char LCURL = '{', RCURL= '}';
+const char LBRACK = '[', RBRACK = ']';
+
+const unordered_set<char> BRACKETS({LPAREN, RPAREN, LCURL, RCURL, LBRACK, RBRACK});
+
+const unordered_set <string> INVALID({"case", "class", "for", "else", "if",
+                                      "struct", "switch", "return", "throw",
+                                      "while"});
+
+unordered_set<char> COMMENT_START({'#', '/', '*'});
+
+
 Detector::Detector(string &filepath) {
     this->file = filepath;
     buildFunctionList();
 }
 
 
-bool Detector::isDelimiter(char &c) {
-    const unordered_set<char> DELIMS({')', '(', '}', '{', ']', '['});
-    return DELIMS.count(c);
-}
+bool Detector::isBracket(char &c) { return BRACKETS.count(c); }
 
-bool Detector::hasParenthesesPair(string &s) {
-    unordered_map<char, char> CLOSED({{')', '('}});
-    unordered_map<char, int> freq({{')', 0}});
+/**
+ * Returns true if the string has a single pair of parentheses. Parses string
+ * stack and tracks pair frequency with map. Skips all non bracket chars.
+ */
+bool Detector::hasParenPair(string &s) {
+    unordered_map<char, char> CLOSED({{RPAREN, LPAREN}});
+
+    unordered_map<char, int> freq({{RPAREN, 0}});
     unordered_map<char, int>::iterator it;
+
     vector<char> stack = {};
     bool isBalanced = true;
+
     for (char &c: s) {
-        if (!isDelimiter(c))
+        if (!isBracket(c))
             continue;
         if (CLOSED.count(c)) {
             if (!stack.empty() && stack.back() == CLOSED[c]) {
@@ -48,26 +65,27 @@ bool Detector::hasParenthesesPair(string &s) {
         } else
             stack.push_back(c);
     }
-    //TODO need to update if a function declaration will extend multiple lines
     if (!isBalanced) {
         return false;
     }
-    return freq[')'] == 1;
+    return freq[RPAREN] == 1;
 }
 
+/**
+ * Parses file stored in Detector, inits Functions for each and stores in
+ * Detector master list.
+ */
 void Detector::buildFunctionList() {
-    string line, name;
     int lineNo = 0;
-    string fullSig, handle;
+    string line;
     ifstream inFile(this->file);
     while (getline(inFile, line)) {
         lineNo++;
-        // TODO CONFIRM NOT A DECLARATION
         StringUtility::trimToSignature(line);
         if (skipLine(line)) {
             continue;
         }
-        if (hasParenthesesPair(line)) {
+        if (hasParenPair(line)) {
             this->masterFunctionList.emplace_back(line, lineNo);
         }
     }
@@ -78,9 +96,12 @@ bool Detector::skipLine(string &line) {
     return (isBlankLine(line) || isComment(line) || hasInvalidFirstToken(line));
 }
 
+/**
+ * Checks the chars in the return type spot are not in the INVALID list.
+ * <return type> myFunc()
+ */
 bool Detector::hasInvalidFirstToken(string &s) {
-    const unordered_set <string> INVALID({"case", "class", "for", "else", "if", "struct", "switch", "return", "throw", "while"});
-    string token = s.substr(0, s.find_first_of('('));
+    string token = s.substr(0, s.find_first_of(LPAREN));
     StringUtility::trimWhitespace(token);
     return INVALID.count(token);
 }
@@ -90,14 +111,12 @@ bool Detector::isBlankLine(string &s) {
 }
 
 bool Detector::isComment(string &s) {
-    unordered_set<char> SKIP({'#', '/', '*'});
-    return SKIP.count((s.at(0)));
+    return COMMENT_START.count((s.at(0)));
 }
 
 bool Detector::isLongMethod(Function &function) const {
-    findEOFunction(function);
+    findEOFunction(function);  // assign f.end and f.blanks
     function.loc = ((function.end - function.start) - function.blanks) + 1;
-//    function.loc = function.end - function.start + 1;
     if (function.loc > LONG_METHOD_THRESHOLD) {
         function.longFunction = true;
         return true;

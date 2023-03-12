@@ -24,13 +24,13 @@ public:
 
     static bool hasInvalidFirstToken(string &s);
 
-    static bool hasParenthesesPair(string &s);
+    static bool hasParenPair(string &s);
 
     static bool isBlankLine(string &s);
 
     static bool isComment(string &s);
 
-    static bool isDelimiter(char &c);
+    static bool isBracket(char &c);
 
     void buildFunctionList();
 
