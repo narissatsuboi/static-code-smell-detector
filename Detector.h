@@ -18,7 +18,7 @@ public:
     vector<Function> functionList;
     string file;
 
-    vector<string> dups;
+    vector<string> duplicates;
 
     static bool skipLine(string &line);
 
@@ -50,9 +50,10 @@ public:
 
     static double hammingRatio(string& s1, string&s2);
 
+    void stringifyFunction(Function &function) const;
+
     void printFunctions();
 
-    void stringifyFunction(Function &function) const;
 };
 
 #include "Detector.cpp"

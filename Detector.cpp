@@ -10,26 +10,26 @@
 #include <unordered_map>
 #include <regex>
 
+/* THRESHOLDS PER SPECIFICATION */
 
 const int LONG_METHOD_THRESHOLD = 15;
-
 const int LONG_PARAM_THRESHOLD = 3;
-
 const double DUP_CODE_THRESHOLD = 0.75;
+
+/* GLOBALS */
 
 const char LPAREN = '(', RPAREN = ')';
 const char LCURL = '{', RCURL= '}';
 const char LBRACK = '[', RBRACK = ']';
-
+unordered_set<char> COMMENT_START({'#', '/', '*'});
 const unordered_set<char> BRACKETS({LPAREN, RPAREN, LCURL, RCURL, LBRACK, RBRACK});
-
 const unordered_set <string> INVALID({"case", "class", "for", "else", "if",
                                       "struct", "switch", "return", "throw",
                                       "while"});
 
-unordered_set<char> COMMENT_START({'#', '/', '*'});
-
-
+/**
+ * Construct new Detector and build master function list member.
+ */
 Detector::Detector(string &filepath) {
     this->file = filepath;
     buildFunctionList();
@@ -125,14 +125,16 @@ bool Detector::isLongMethod(Function &function) const {
 }
 
 void Detector::findEOFunction(Function &function) const {
-    const unordered_set<char> delims({'}', '{'});
-    ifstream inFile(this->file);
-    string line;
-    int lineNo = 0;
-    int matchesMade = 0;
-    unordered_map<char, char> CLOSED({{'}', '{'}});
-    bool EOFFound = false;
+    const unordered_set<char> CURLPAIR({RCURL, LCURL});
+    unordered_map<char, char> CLOSED({{RCURL, LCURL}});
+
+    int lineNo = 0, matchesMade = 0;
+    bool EOFound = false;
+
     vector<char> stack = {};
+
+    string line;
+    ifstream inFile(this->file);
     do {
         getline(inFile, line);
         lineNo++;
@@ -140,11 +142,12 @@ void Detector::findEOFunction(Function &function) const {
             continue;
         }
         if (isBlankLine(line)) {
-            function.blanks++;
+            function.blanks++; // track blank lines for loc calc
             continue;
         }
+        // for curly brace pair to EOFunction
         for (char &c: line) {
-            if (!delims.count(c))
+            if (!CURLPAIR.count(c))
                 continue;
             if (CLOSED.count(c)) {
                 if (!stack.empty() && stack.back() == CLOSED[c]) {
@@ -155,27 +158,27 @@ void Detector::findEOFunction(Function &function) const {
                 stack.push_back(c);
         }
         if (stack.empty() && matchesMade > 0) {
-            function.end = lineNo;
-            EOFFound = true;
+            function.end = lineNo;  // store end of function
+            EOFound = true;
         }
-    } while (!EOFFound);
+    } while (!EOFound);
     inFile.close();
 }
 
 void Detector::detectLongMethods() {
-    for (auto &f: this->functionList) {
-        isLongMethod(f);
-    }
+    for (auto &f: this->functionList) { isLongMethod(f); }
 }
 
 void Detector::detectLongParameterList() {
-    for (auto &f: this->functionList) {
-        isLongParameterList(f);
-    }
+    for (auto &f: this->functionList) { isLongParameterList(f); }
 }
 
+/**
+ * Number of parameters = Number of commas in function signature + 1
+ */
 void Detector::isLongParameterList(Function &function) {
     string sig = function.signature;
+
     string::difference_type n = count(sig.begin(), sig.end(), ',');
     function.paramCount = n + 1;
     if (function.paramCount <= LONG_PARAM_THRESHOLD) {
@@ -185,18 +188,16 @@ void Detector::isLongParameterList(Function &function) {
     }
 }
 
+/**
+ * Compare stringified function's hamming ratio.
+ */
 void Detector::detectDuplicatedCode() {
     // find end index of each function, store to function
-    for (auto &f: functionList) {
-        findEOFunction(f);
-    }
+    for (auto &f: functionList) { findEOFunction(f); }
 
     // get stringified version and store to function
-    for (auto &f: functionList) {
-        stringifyFunction(f);
-    }
+    for (auto &f: functionList) { stringifyFunction(f); }
 
-    // find fs with same char count and get the hamming ratio
     for (auto i = 0; i < functionList.size(); i++) {
         Function &f1 = functionList[i];
         for (auto j = i + 1; j < functionList.size(); j++) {
@@ -210,7 +211,7 @@ void Detector::isDuplicatedCode(Function &f1, Function &f2) {
     if (f1.charCount == f2.charCount) {
         double similarity = 1.0 - hammingRatio(f1.stringified, f2.stringified);
         if (similarity >= DUP_CODE_THRESHOLD) {
-            dups.insert(dups.end(), {f1.handle, f2.handle});
+            duplicates.insert(duplicates.end(), {f1.handle, f2.handle});
         }
     }
 }
@@ -222,6 +223,10 @@ void Detector::printFunctions() {
         cout << f << "\n";
 }
 
+/**
+ * Stringify body of a function including everything between first { and last }
+ * no whitespace.
+ */
 void Detector::stringifyFunction(Function &function) const {
     ifstream inFile(this->file);
     string ss, line;
@@ -233,14 +238,12 @@ void Detector::stringifyFunction(Function &function) const {
         lineNo++;
         getline(inFile, line);
 
-        if (lineNo < function.start) {
-            continue;
-        }
+        if (lineNo < function.start) { continue; }
 
         ss += regex_replace(line, r, "");
     }
     inFile.close();
-    ss.erase(0, ss.find('{'));
+    ss.erase(0, ss.find(LCURL));
     function.stringified = ss;
     function.charCount = function.stringified.length();
 }
