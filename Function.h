@@ -18,13 +18,14 @@ public:
     string signature;
     string handle;
     string params;
-    int start{};
-    int end{};
-    int loc{};
-    bool longFunction{};
-    int paramCount;
-    bool longParam{};
-    bool dupCode{};
+    int start = 0;
+    int end = 0;
+    int loc = 0;
+    bool longFunction = false;
+    size_t paramCount = 0;
+    bool longParam = false;
+    string stringified;
+    size_t charCount = 0;
 
     Function();
 

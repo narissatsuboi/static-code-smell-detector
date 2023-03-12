@@ -5,7 +5,7 @@
 
 #include "Function.h"
 #include <vector>
-
+#include <set>
 #ifndef SNIFFY_DETECTOR_H
 #define SNIFFY_DETECTOR_H
 
@@ -15,8 +15,10 @@ public:
     explicit Detector(string &filepath);
 
     vector<Function> masterFunctionList;
-    vector<Function> functionsToAnalyze;
+    vector<Function> functionList;
     string file;
+
+    vector<string> dups;
 
     static bool skipLine(string &line);
 
@@ -42,7 +44,15 @@ public:
 
     static void isLongParameterList(Function & function);
 
+    void detectDuplicatedCode();
 
+    void isDuplicatedCode(Function & f1, Function & f2);
+
+    static double hammingRatio(string& s1, string&s2);
+
+    void printFunctions();
+
+    void stringifyFunction(Function &function) const;
 };
 
 #include "Detector.cpp"

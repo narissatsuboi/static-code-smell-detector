@@ -1,22 +1,21 @@
 #include "Function.h"
 #include "StringUtility.h"
+#include "Detector.h"
+
 #include <iostream>
 #include <algorithm>
 #include <fstream>
-#include<sstream>
 #include <vector>
-#include <map>
-#include <iomanip>
 #include <unordered_set>
 #include <unordered_map>
 #include <regex>
-#include <set>
 
-#include "Detector.h"
 
 const int LONG_METHOD_THRESHOLD = 15;
 
 const int LONG_PARAM_THRESHOLD = 3;
+
+const double DUP_CODE_THRESHOLD = 0.75;
 
 Detector::Detector(string &filepath) {
     this->file = filepath;
@@ -88,7 +87,7 @@ bool Detector::hasInvalidFirstToken(string &s) {
 
 bool Detector::isBlankLine(string &s) {
     return s.length() == 0;
-};
+}
 
 bool Detector::isComment(string &s) {
     unordered_set<char> SKIP({'#', '/', '*'});
@@ -140,13 +139,13 @@ void Detector::findEOFunction(Function &function) const {
 }
 
 void Detector::detectLongMethods() {
-    for (auto &f: this->functionsToAnalyze) {
+    for (auto &f: this->functionList) {
         isLongMethod(f);
     }
 }
 
 void Detector::detectLongParameterList() {
-    for (auto &f: this->functionsToAnalyze) {
+    for (auto &f: this->functionList) {
         isLongParameterList(f);
     }
 }
@@ -154,8 +153,6 @@ void Detector::detectLongParameterList() {
 void Detector::isLongParameterList(Function &function) {
     const int LPL_MAX = 3;
     string sig = function.signature;
-    int numCommas = 0;
-    int startIdx = sig.find('(');
     string::difference_type n = count(sig.begin(), sig.end(), ',');
     function.paramCount = n + 1;
     if (function.paramCount <= LPL_MAX) {
@@ -163,4 +160,73 @@ void Detector::isLongParameterList(Function &function) {
     } else {
         function.longParam = true;
     }
+}
+
+void Detector::detectDuplicatedCode() {
+    // find end index of each function, store to function
+    for (auto& f : functionList) {
+        findEOFunction(f);
+    }
+
+    // get stringified version and store to function
+    for (auto& f : functionList) {
+        stringifyFunction(f);
+    }
+
+    // find fs with same char count and get the hamming ratio
+    for (auto i=0; i < functionList.size(); i++) {
+        Function& f1 = functionList[i];
+        for (auto j=i+1; j < functionList.size(); j++){
+            Function& f2 = functionList[j];
+            isDuplicatedCode(f1, f2);
+            }
+    }
+}
+
+void Detector::isDuplicatedCode(Function &f1, Function &f2) {
+    if(f1.charCount == f2.charCount) {
+        double similarity = 1.0 - hammingRatio(f1.stringified, f2.stringified);
+        if (similarity >= DUP_CODE_THRESHOLD) {
+            dups.insert(dups.end(), {f1.handle, f2.handle});
+        }
+    }
+}
+
+void Detector::printFunctions() {
+    string bannerContent = "Functions To Analyze List";
+    cout << StringUtility::banner(bannerContent);
+    for (auto& f : functionList)
+        cout << f << "\n";
+}
+
+void Detector::stringifyFunction(Function &function) const {
+    ifstream inFile(this->file);
+    string ss, line;
+    int lineNo = 0;
+
+    regex r("\\s+");
+
+    while(lineNo < function.end + 1) {
+        lineNo++;
+        getline(inFile, line);
+
+        if (lineNo < function.start) {
+            continue;
+        }
+
+        ss += regex_replace(line, r, "");
+    }
+    inFile.close();
+    ss.erase(0, ss.find('{'));
+    function.stringified = ss;
+    function.charCount = function.stringified.length();
+}
+
+double Detector::hammingRatio(string &s1, string &s2) {
+    double count = 0, l = s1.length();
+    for (auto i = 0; i < l; i++) {
+        if (s1[i] != s2[i])
+            count++;
+    }
+    return count / l;
 }
