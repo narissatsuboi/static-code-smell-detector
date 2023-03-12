@@ -25,10 +25,10 @@ int main4() {
     for (int i = 0; i < 10; i++) { cout << "Hi" << endl; }
 }
 
-//int fun1(int a, int b, int c, int d) {
-//    return a + b;
-//}
-//
+int fun1(int a, int b, int c, int d) {
+    return a + b;
+}
+
 //int fun23456(int a, int b, int c, int d) {
 //    return a + b;
 //}

@@ -156,11 +156,10 @@ void Detector::detectLongParameterList() {
 }
 
 void Detector::isLongParameterList(Function &function) {
-    const int LPL_MAX = 3;
     string sig = function.signature;
     string::difference_type n = count(sig.begin(), sig.end(), ',');
     function.paramCount = n + 1;
-    if (function.paramCount <= LPL_MAX) {
+    if (function.paramCount <= LONG_PARAM_THRESHOLD) {
         function.longParam = false;
     } else {
         function.longParam = true;
@@ -169,27 +168,27 @@ void Detector::isLongParameterList(Function &function) {
 
 void Detector::detectDuplicatedCode() {
     // find end index of each function, store to function
-    for (auto& f : functionList) {
+    for (auto &f: functionList) {
         findEOFunction(f);
     }
 
     // get stringified version and store to function
-    for (auto& f : functionList) {
+    for (auto &f: functionList) {
         stringifyFunction(f);
     }
 
     // find fs with same char count and get the hamming ratio
-    for (auto i=0; i < functionList.size(); i++) {
-        Function& f1 = functionList[i];
-        for (auto j=i+1; j < functionList.size(); j++){
-            Function& f2 = functionList[j];
+    for (auto i = 0; i < functionList.size(); i++) {
+        Function &f1 = functionList[i];
+        for (auto j = i + 1; j < functionList.size(); j++) {
+            Function &f2 = functionList[j];
             isDuplicatedCode(f1, f2);
-            }
+        }
     }
 }
 
 void Detector::isDuplicatedCode(Function &f1, Function &f2) {
-    if(f1.charCount == f2.charCount) {
+    if (f1.charCount == f2.charCount) {
         double similarity = 1.0 - hammingRatio(f1.stringified, f2.stringified);
         if (similarity >= DUP_CODE_THRESHOLD) {
             dups.insert(dups.end(), {f1.handle, f2.handle});
@@ -200,7 +199,7 @@ void Detector::isDuplicatedCode(Function &f1, Function &f2) {
 void Detector::printFunctions() {
     string bannerContent = "Functions To Analyze List";
     cout << StringUtility::banner(bannerContent);
-    for (auto& f : functionList)
+    for (auto &f: functionList)
         cout << f << "\n";
 }
 
@@ -211,7 +210,7 @@ void Detector::stringifyFunction(Function &function) const {
 
     regex r("\\s+");
 
-    while(lineNo < function.end + 1) {
+    while (lineNo < function.end + 1) {
         lineNo++;
         getline(inFile, line);
 

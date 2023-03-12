@@ -5,7 +5,6 @@
 
 #include "StringUtility.h"
 #include "Detector.h"
-#include "Jaccard.h"
 #include <iostream>
 #include <vector>
 #include <map>
@@ -18,9 +17,10 @@ const string LF = "LONG METHOD/FUNCTION DETECTION";
 const string LPL = "LONG PARAMETER LIST DETECTION";
 const string DC = "DUPLICATED CODE DETECTION";
 const string QUIT = "QUIT";
-map<string, string> MENU_OPTIONS = {{"1", LF}, {"2", LPL},
+map<string, string> MENU_OPTIONS = {{"1", LF},
+                                    {"2", LPL},
                                     {"3", DC},
-                                          {"4", QUIT}};
+                                    {"4", QUIT}};
 
 /* INLINE FUNCTIONS */
 
@@ -54,27 +54,31 @@ static inline void printStart(string &filename) {
 
 /* DECLARATIONS */
 
-string menuLoop();
-
-void printFunctionNames(vector<Function> &functions);
-
-void handleSelection(string &key, Detector &detect);
-
-vector<string> parseTokens(string &input);
-
-vector<string> getFunctionList(int numFunctions);
-
-string LMResults(Detector &d);
-
-string LPLResults(Detector &d);
-
-string DCResults(Detector &d);
-
-void printResults(string &key, Detector &detect);
+bool areValidFunctionChoices(vector<string> &functionNumbers, int &maxChoice);
 
 bool detectAgain();
 
+string DCResults(Detector &d);
+
+void handleSelection(string &key, Detector &detect);
+
+bool isValidInteger(string &n);
+
+vector<string> getFunctionChoices(int maxChoice);
+
+string menuLoop();
+
+vector<string> parseTokens(string &input);
+
+void printFunctionNames(vector<Function> &functions);
+
 void printExit();
+
+void printResults(string &key, Detector &detect);
+
+string LPLResults(Detector &d);
+
+string LMResults(Detector &d);
 
 /* DEFINITIONS */
 
@@ -84,18 +88,24 @@ string menuLoop() {
     for (const auto &[key, value]: MENU_OPTIONS) {
         cout << ">> " << key << " : " << value << "\n";
     }
-    bool validSelection = true;
+    bool validSelection = false;
     string selection;
     do {
+        cout << StringUtility::banner(bannerContent);
+        for (const auto &[key, value]: MENU_OPTIONS) {
+            cout << ">> " << key << " : " << value << "\n";
+        }
         cin >> ws;
         getline(cin, selection);
-        if (MENU_OPTIONS.count(selection)) {
-            return MENU_OPTIONS[selection];
+        if (isValidInteger(selection) && MENU_OPTIONS.count(selection)) {
+            validSelection = true;
         } else {
-            cout << "*** Invalid selection, please try again. ***" << "\n";
+            cout << "(!) Invalid input." << "\n";
             validSelection = false;
         }
-    } while(!validSelection);
+    } while (!validSelection);
+
+    return MENU_OPTIONS[selection];
 }
 
 void printFunctionNames(vector<Function> &functions) {
@@ -105,6 +115,87 @@ void printFunctionNames(vector<Function> &functions) {
         cout << i << ". " << function.handle << "\n";
         i++;
     }
+}
+
+void printResults(string &key, Detector &detect) {
+    string bannerContent = "RESULTS";
+    stringstream ss;
+    ss << StringUtility::banner(bannerContent);
+    if (key == LF) {
+        ss << LMResults(detect);
+    } else if (key == LPL) {
+        ss << LPLResults(detect);
+    } else if (key == DC) {
+        ss << DCResults(detect);
+    }
+    cout << ss.str() << "\n";
+}
+
+string LMResults(Detector &d) {
+    int lmCount = 0;
+    stringstream ss;
+    for (auto &f: d.functionList) {
+        if (f.longFunction) {
+            lmCount++;
+            ss << f.handle << " is a Long Function. ";
+            ss << "It contains " << f.loc << " lines. " << "\n";
+        }
+    }
+    if (lmCount == 0) {
+        ss << "No function is a Long Function." << "\n";
+    }
+    return ss.str();
+}
+
+string LPLResults(Detector &d) {
+    int lplcount = 0;
+    stringstream ss;
+    for (auto &f: d.functionList) {
+        if (f.longParam) {
+            lplcount++;
+            ss << f.handle << " has a Long Parameter List. Its parameter list contains ";
+            ss << f.paramCount << " parameters." << "\n";
+        }
+    }
+    if (lplcount == 0) {
+        ss << "No function has a Long Parameter List" << "\n";
+    }
+    return ss.str();
+}
+
+string DCResults(Detector &d) {
+    stringstream ss;
+    if (d.dups.empty()) {
+        ss << "No functions are duplicated" << "\n";
+    } else {
+        int j;
+        for (auto i = 0; i < d.dups.size() - 1; i++) {
+            j = i + 1;
+            ss << d.dups[i] << " and " << d.dups[j] << " are duplicated\n";
+            i++;
+        }
+    }
+    return ss.str();
+}
+
+void printExit() {
+    stringstream ss;
+    string bannerContent = "GOODBYE!";
+    ss << "\n";
+    ss << StringUtility::banner(bannerContent);
+    cout << ss.str();
+}
+
+bool detectAgain() {
+    stringstream ss;
+    ss << "\n";
+    ss << "Would you like to detect again?" << "\n";
+    ss << "\"Y\" or \"y\" to detect again or any other key to exit\n";
+    cout << ss.str();
+    string selection;
+    cin >> ws;
+    getline(cin, selection);
+    return selection == "Y" || selection == "y";
 }
 
 void handleSelection(string &key, Detector &detect) {
@@ -119,7 +210,7 @@ void handleSelection(string &key, Detector &detect) {
 
     // analyze all functionList if duplicate code or user selected all functionList
     if (key != DC) {
-        vector<string> selectedFunctionIdxs = getFunctionList(detect.masterFunctionList.size());
+        vector<string> selectedFunctionIdxs = getFunctionChoices(detect.masterFunctionList.size());
         if (selectedFunctionIdxs[0] == "0") {
             detect.functionList = detect.masterFunctionList;
         } else {
@@ -141,7 +232,7 @@ void handleSelection(string &key, Detector &detect) {
 }
 
 vector<string> parseTokens(string &input) {
-    auto const reg = std::regex{R"(\s+|,\s+)"};
+    auto const reg = std::regex{R"(\s+| \s+)"};
     auto tokens = vector<std::string>(
             sregex_token_iterator{begin(input), end(input), reg, -1},
             sregex_token_iterator{}
@@ -149,109 +240,38 @@ vector<string> parseTokens(string &input) {
     return tokens;
 }
 
-vector<string> getFunctionList(int numFunctions) {
-    cout << "To analyze ALL functionList, press 0 + ENTER" << "\n";
-    cout << "To analyze specific methods, enter their number separated by\ncomma and press ENTER" << "\n";
-    cout << "Example: 1, 2, 4 + ENTER" << "\n";
+bool isValidInteger(string &n) {
+    try {
+        stoi(n);
+    } catch (invalid_argument &e) {
+        return false;
+    }
+    return true;
+}
+
+bool areValidFunctionChoices(vector<string> &functionNumbers, int &maxChoice) {
+    for (auto &fn: functionNumbers) {
+        if (!isValidInteger(fn) || stoi(fn) < 0 || stoi(fn) > maxChoice) {
+            cout << "(!) Invalid input\n";
+            return false;
+        }
+    }
+    return true;
+}
+
+vector<string> getFunctionChoices(int maxChoice) {
+
     string selections;
-    bool validFunction = true;
     vector<string> functionNums;
     do {
+        cout << "To analyze ALL functions, enter 0, OR" << "\n";
+        cout << "enter function numbers separated by a space" << "\n";
+        cout << "Ex. 1 2 4 11" << "\n";
         cin >> ws;
         getline(cin, selections);
         functionNums = parseTokens(selections);
-        for (auto &fn: functionNums) {
-            if (stoi(fn) < 0 || stoi(fn) > numFunctions) {
-                validFunction = false;
-                cout << "*** Invalid function number, please try again. ***" << "\n";
-                break;
-            } else {
-                validFunction = true;
-            }
-        }
-    } while(!validFunction);
-
+    } while (!areValidFunctionChoices(functionNums, maxChoice));
     return functionNums;
-}
-
-string LMResults(Detector &d) {
-    int lmCount = 0;
-    stringstream ss;
-    for (auto &f: d.functionList) {
-        if (f.longFunction) {
-            lmCount++;
-            ss << f.handle << " is a Long Function. ";
-            ss << "It contains " << f.loc << " lines. " << "\n";
-        }
-    }
-    if (lmCount == 0) {
-        ss << "No function is a Long Function." << "\n";
-    }
-    return ss.str();
-}
-string LPLResults(Detector &d) {
-    int lplcount = 0;
-    stringstream ss;
-    for (auto &f: d.functionList) {
-        if (f.longParam) {
-            lplcount++;
-            ss << f.handle << " has a Long Parameter List. Its paramter list contains ";
-            ss << f.paramCount << " parameters." << "\n";
-        }
-    }
-    if (lplcount == 0) {
-        ss << "No function has a Long Parameter List" << "\n";
-    }
-    return ss.str();
-}
-
-string DCResults(Detector &d) {
-    stringstream ss;
-    if (d.dups.empty()) {
-        ss << "No functions are duplicated" << "\n";
-    } else {
-        int j;
-        for (auto i=0; i < d.dups.size()-1; i++ ) {
-            j = i + 1;
-            ss << d.dups[i] << " and " << d.dups[j] << " are duplicated\n";
-            i++;
-        }
-    }
-    return ss.str();
-}
-
-void printResults(string &key, Detector &detect) {
-    string bannerContent = "RESULTS";
-    stringstream ss;
-    ss << StringUtility::banner(bannerContent);
-    if (key == LF) {
-        ss << LMResults(detect);
-    } else if (key == LPL) {
-        ss << LPLResults(detect);
-    } else if (key == DC) {
-        ss << DCResults(detect);
-    }
-    cout << ss.str() << "\n";
-}
-
-void printExit() {
-    stringstream ss;
-    string bannerContent = "GOODBYE!";
-    ss << "\n";
-    ss << StringUtility::banner(bannerContent);
-    cout << ss.str();
-}
-
-bool detectAgain() {
-    stringstream ss;
-    ss << "\n";
-    ss << "Would you like to detect again?" << "\n";
-    ss << "\"Y\" to detect again or any other key to exit\n";
-    cout << ss.str();
-    string selection;
-    cin >> ws;
-    getline(cin, selection);
-    return selection == "Y" || selection == "y";
 }
 
 int main(int argc, char *argv[]) {
@@ -262,9 +282,10 @@ int main(int argc, char *argv[]) {
     }
 
     bool keepSmelling = true;
-    while(keepSmelling) {
+    while (keepSmelling) {
         string filepath = argv[1];
         ifstream inFile(filepath);
+        // validate filepath
         if (!inFile.is_open()) {
             cout << "\n" << "ERROR" << "\n";
             cout << "Could not open file at path: " << argv[1] << "\n";
@@ -273,13 +294,17 @@ int main(int argc, char *argv[]) {
         }
         inFile.close();
 
+        // init detector and build function list
         Detector detect = Detector(filepath);
         printStart(filepath);
         printFunctionNames(detect.masterFunctionList);
+
+        // handle selection of code smell type
         string selection = menuLoop();
         handleSelection(selection, detect);
+
+        // log code smell results to screen
         printResults(selection, detect);
-        detect.printFunctions();
         keepSmelling = detectAgain();
     }
 
