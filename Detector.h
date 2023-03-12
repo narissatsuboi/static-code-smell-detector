@@ -52,8 +52,6 @@ public:
 
     void stringifyFunction(Function &function) const;
 
-    void printFunctions();
-
 };
 
 #include "Detector.cpp"

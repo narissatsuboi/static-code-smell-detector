@@ -216,12 +216,6 @@ void Detector::isDuplicatedCode(Function &f1, Function &f2) {
     }
 }
 
-void Detector::printFunctions() {
-    string bannerContent = "Functions To Analyze List";
-    cout << StringUtility::banner(bannerContent);
-    for (auto &f: functionList)
-        cout << f << "\n";
-}
 
 /**
  * Stringify body of a function including everything between first { and last }
