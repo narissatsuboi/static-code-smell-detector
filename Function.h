@@ -20,6 +20,7 @@ public:
     string params;
     int start = 0;
     int end = 0;
+    int blanks = 0;
     int loc = 0;
     bool longFunction = false;
     size_t paramCount = 0;
