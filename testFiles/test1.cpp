@@ -10,7 +10,11 @@ int fun1(int a, int b, int c, int d){
     return a+b;
 }
 
-int fun2(int a, int b, int c, int d) {
+int fun23456(int a, int b, int c, int d) {
+    return a+b;
+}
+
+int fun3(int a, int b, int y, int z) {
     return a+b;
 }
 

@@ -62,11 +62,13 @@ void handleSelection(string &key, Detector &detect);
 
 vector<string> parseTokens(string &input);
 
-vector<string> getFunctionNumbers(int numFunctions);
+vector<string> getFunctionList(int numFunctions);
 
 string LMResults(Detector &d);
 
 string LPLResults(Detector &d);
+
+string DCResults(Detector &d);
 
 void printResults(string &key, Detector &detect);
 
@@ -94,7 +96,6 @@ string menuLoop() {
             validSelection = false;
         }
     } while(!validSelection);
-    return selection;
 }
 
 void printFunctionNames(vector<Function> &functions) {
@@ -116,33 +117,26 @@ void handleSelection(string &key, Detector &detect) {
     string bannerContent = key + " ANALYSIS";
     cout << StringUtility::banner(bannerContent);
 
-    // fill Detector's function list based on user input
-    int totalNumFunctions = detect.masterFunctionList.size();
-    vector<string> functionNums = getFunctionNumbers(totalNumFunctions);
-
-    // analyze all functionsToAnalyze if duplicate code or user selected all functionsToAnalyze
-    if (key == "DC" || (functionNums.size() == 1 && functionNums[0] == "0")) {
-        detect.functionsToAnalyze = detect.masterFunctionList;
-    } else { // custom pick from master list
-        for (const auto &functionNum: functionNums) {
-            int functNum = stoi(functionNum);
-            Function &f = detect.masterFunctionList[functNum - 1];
-            detect.functionsToAnalyze.push_back(f);
+    // analyze all functionList if duplicate code or user selected all functionList
+    if (key != DC) {
+        vector<string> selectedFunctionIdxs = getFunctionList(detect.masterFunctionList.size());
+        if (selectedFunctionIdxs[0] == "0") {
+            detect.functionList = detect.masterFunctionList;
+        } else {
+            for (const auto &num: selectedFunctionIdxs) {
+                detect.functionList.push_back(detect.masterFunctionList[stoi(num) - 1]);
+            }
         }
     }
 
     // perform analysis
     if (key == LF) {
         detect.detectLongMethods();
-    }
-
-    if (key == LPL) {
+    } else if (key == LPL) {
         detect.detectLongParameterList();
-    }
-
-    if (key == DC) {
-        cout << "CALL DC HERE" << "\n";
-        return;
+    } else if (key == DC) {
+        detect.functionList = detect.masterFunctionList;
+        detect.detectDuplicatedCode();
     }
 }
 
@@ -155,8 +149,8 @@ vector<string> parseTokens(string &input) {
     return tokens;
 }
 
-vector<string> getFunctionNumbers(int numFunctions) {
-    cout << "To analyze ALL functionsToAnalyze, press 0 + ENTER" << "\n";
+vector<string> getFunctionList(int numFunctions) {
+    cout << "To analyze ALL functionList, press 0 + ENTER" << "\n";
     cout << "To analyze specific methods, enter their number separated by\ncomma and press ENTER" << "\n";
     cout << "Example: 1, 2, 4 + ENTER" << "\n";
     string selections;
@@ -183,7 +177,7 @@ vector<string> getFunctionNumbers(int numFunctions) {
 string LMResults(Detector &d) {
     int lmCount = 0;
     stringstream ss;
-    for (auto &f: d.functionsToAnalyze) {
+    for (auto &f: d.functionList) {
         if (f.longFunction) {
             lmCount++;
             ss << f.handle << " is a Long Function. ";
@@ -198,7 +192,7 @@ string LMResults(Detector &d) {
 string LPLResults(Detector &d) {
     int lplcount = 0;
     stringstream ss;
-    for (auto &f: d.functionsToAnalyze) {
+    for (auto &f: d.functionList) {
         if (f.longParam) {
             lplcount++;
             ss << f.handle << " has a Long Parameter List. Its paramter list contains ";
@@ -211,16 +205,34 @@ string LPLResults(Detector &d) {
     return ss.str();
 }
 
+string DCResults(Detector &d) {
+    stringstream ss;
+    if (d.dups.empty()) {
+        ss << "No functions are duplicated" << "\n";
+    } else {
+        int j;
+        for (auto i=0; i < d.dups.size()-1; i++ ) {
+            j = i + 1;
+            ss << d.dups[i] << " and " << d.dups[j] << " are duplicated\n";
+            i++;
+        }
+    }
+    return ss.str();
+}
+
 void printResults(string &key, Detector &detect) {
     string bannerContent = "RESULTS";
     stringstream ss;
     ss << StringUtility::banner(bannerContent);
+//     if (key == DC) {
+//         ss << DCResults(detect);
+//    }
     if (key == LF) {
         ss << LMResults(detect);
     } else if (key == LPL) {
         ss << LPLResults(detect);
     } else if (key == DC) {
-        ss << LMResults(detect);
+        ss << DCResults(detect);
     }
     cout << ss.str() << "\n";
 }
@@ -234,19 +246,15 @@ void printExit() {
 }
 
 bool detectAgain() {
-    unordered_set<string> exit = {{"No", "NO", "no", "nO", "n", "N"}};
     stringstream ss;
     ss << "\n";
     ss << "Would you like to detect again?" << "\n";
-    ss << "Enter any key to continue + Enter OR \"No\" + Enter to exit.\n";
+    ss << "\"Y\" to detect again or any other key to exit\n";
     cout << ss.str();
     string selection;
     cin >> ws;
     getline(cin, selection);
-    if (exit.count(selection)) {
-        return false;
-    }
-    return true;
+    return selection == "Y" || selection == "y";
 }
 
 int main(int argc, char *argv[]) {
@@ -271,14 +279,10 @@ int main(int argc, char *argv[]) {
         Detector detect = Detector(filepath);
         printStart(filepath);
         printFunctionNames(detect.masterFunctionList);
-
         string selection = menuLoop();
         handleSelection(selection, detect);
         printResults(selection, detect);
-        if(!detectAgain()) {
-            keepSmelling = false;
-        }
-        keepSmelling = false;
+        keepSmelling = detectAgain();
     }
 
     printExit();
