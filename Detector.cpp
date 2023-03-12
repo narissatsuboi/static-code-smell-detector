@@ -96,7 +96,8 @@ bool Detector::isComment(string &s) {
 
 bool Detector::isLongMethod(Function &function) const {
     findEOFunction(function);
-    function.loc = function.end - function.start + 1;
+    function.loc = ((function.end - function.start) - function.blanks) + 1;
+//    function.loc = function.end - function.start + 1;
     if (function.loc > LONG_METHOD_THRESHOLD) {
         function.longFunction = true;
         return true;
@@ -117,6 +118,10 @@ void Detector::findEOFunction(Function &function) const {
         getline(inFile, line);
         lineNo++;
         if (lineNo < function.start) {
+            continue;
+        }
+        if (isBlankLine(line)) {
+            function.blanks++;
             continue;
         }
         for (char &c: line) {

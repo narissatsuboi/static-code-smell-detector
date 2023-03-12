@@ -224,9 +224,6 @@ void printResults(string &key, Detector &detect) {
     string bannerContent = "RESULTS";
     stringstream ss;
     ss << StringUtility::banner(bannerContent);
-//     if (key == DC) {
-//         ss << DCResults(detect);
-//    }
     if (key == LF) {
         ss << LMResults(detect);
     } else if (key == LPL) {
@@ -282,6 +279,7 @@ int main(int argc, char *argv[]) {
         string selection = menuLoop();
         handleSelection(selection, detect);
         printResults(selection, detect);
+        detect.printFunctions();
         keepSmelling = detectAgain();
     }
 

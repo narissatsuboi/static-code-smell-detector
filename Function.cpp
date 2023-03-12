@@ -32,6 +32,7 @@ ostream &operator<<(ostream &os, const Function &func) {
     os << "range:  " << func.start << ", " << func.end << "\n";
     os << "handle: " << func.handle << "\n";
     os << "LF    : " << func.longFunction << "\n";
+    os << "blanks: " << func.blanks << "\n";
     os << "loc:    " << func.loc << "\n";
     os << "LPL   : " << func.longFunction << "\n";
     os << "params: " << func.paramCount << "\n";
