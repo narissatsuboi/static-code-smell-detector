@@ -84,11 +84,7 @@ string LMResults(Detector &d);
 
 string menuLoop() {
     string bannerContent = "SELECT SMELL";
-    cout << StringUtility::banner(bannerContent);
-    for (const auto &[key, value]: MENU_OPTIONS) {
-        cout << ">> " << key << " : " << value << "\n";
-    }
-    bool validSelection = false;
+    bool validSelection = true;
     string selection;
     do {
         cout << StringUtility::banner(bannerContent);
@@ -158,20 +154,20 @@ string LPLResults(Detector &d) {
         }
     }
     if (lplcount == 0) {
-        ss << "No function has a Long Parameter List" << "\n";
+        ss << "No function has a Long Parameter List." << "\n";
     }
     return ss.str();
 }
 
 string DCResults(Detector &d) {
     stringstream ss;
-    if (d.dups.empty()) {
-        ss << "No functions are duplicated" << "\n";
+    if (d.duplicates.empty()) {
+        ss << "No functions are duplicated." << "\n";
     } else {
         int j;
-        for (auto i = 0; i < d.dups.size() - 1; i++) {
+        for (auto i = 0; i < d.duplicates.size() - 1; i++) {
             j = i + 1;
-            ss << d.dups[i] << " and " << d.dups[j] << " are duplicated\n";
+            ss << d.duplicates[i] << " and " << d.duplicates[j] << " are duplicated.\n";
             i++;
         }
     }

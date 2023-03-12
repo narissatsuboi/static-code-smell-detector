@@ -10,32 +10,49 @@
 #include <unordered_map>
 #include <regex>
 
+/* THRESHOLDS PER SPECIFICATION */
 
 const int LONG_METHOD_THRESHOLD = 15;
-
 const int LONG_PARAM_THRESHOLD = 3;
-
 const double DUP_CODE_THRESHOLD = 0.75;
 
+/* GLOBALS */
+
+const char LPAREN = '(', RPAREN = ')';
+const char LCURL = '{', RCURL= '}';
+const char LBRACK = '[', RBRACK = ']';
+unordered_set<char> COMMENT_START({'#', '/', '*'});
+const unordered_set<char> BRACKETS({LPAREN, RPAREN, LCURL, RCURL, LBRACK, RBRACK});
+const unordered_set <string> INVALID({"case", "class", "for", "else", "if",
+                                      "struct", "switch", "return", "throw",
+                                      "while"});
+
+/**
+ * Construct new Detector and build master function list member.
+ */
 Detector::Detector(string &filepath) {
     this->file = filepath;
     buildFunctionList();
 }
 
 
-bool Detector::isDelimiter(char &c) {
-    const unordered_set<char> DELIMS({')', '(', '}', '{', ']', '['});
-    return DELIMS.count(c);
-}
+bool Detector::isBracket(char &c) { return BRACKETS.count(c); }
 
-bool Detector::hasParenthesesPair(string &s) {
-    unordered_map<char, char> CLOSED({{')', '('}});
-    unordered_map<char, int> freq({{')', 0}});
+/**
+ * Returns true if the string has a single pair of parentheses. Parses string
+ * stack and tracks pair frequency with map. Skips all non bracket chars.
+ */
+bool Detector::hasParenPair(string &s) {
+    unordered_map<char, char> CLOSED({{RPAREN, LPAREN}});
+
+    unordered_map<char, int> freq({{RPAREN, 0}});
     unordered_map<char, int>::iterator it;
+
     vector<char> stack = {};
     bool isBalanced = true;
+
     for (char &c: s) {
-        if (!isDelimiter(c))
+        if (!isBracket(c))
             continue;
         if (CLOSED.count(c)) {
             if (!stack.empty() && stack.back() == CLOSED[c]) {
@@ -48,26 +65,27 @@ bool Detector::hasParenthesesPair(string &s) {
         } else
             stack.push_back(c);
     }
-    //TODO need to update if a function declaration will extend multiple lines
     if (!isBalanced) {
         return false;
     }
-    return freq[')'] == 1;
+    return freq[RPAREN] == 1;
 }
 
+/**
+ * Parses file stored in Detector, inits Functions for each and stores in
+ * Detector master list.
+ */
 void Detector::buildFunctionList() {
-    string line, name;
     int lineNo = 0;
-    string fullSig, handle;
+    string line;
     ifstream inFile(this->file);
     while (getline(inFile, line)) {
         lineNo++;
-        // TODO CONFIRM NOT A DECLARATION
         StringUtility::trimToSignature(line);
         if (skipLine(line)) {
             continue;
         }
-        if (hasParenthesesPair(line)) {
+        if (hasParenPair(line)) {
             this->masterFunctionList.emplace_back(line, lineNo);
         }
     }
@@ -78,9 +96,12 @@ bool Detector::skipLine(string &line) {
     return (isBlankLine(line) || isComment(line) || hasInvalidFirstToken(line));
 }
 
+/**
+ * Checks the chars in the return type spot are not in the INVALID list.
+ * <return type> myFunc()
+ */
 bool Detector::hasInvalidFirstToken(string &s) {
-    const unordered_set <string> INVALID({"case", "class", "for", "else", "if", "struct", "switch", "return", "throw", "while"});
-    string token = s.substr(0, s.find_first_of('('));
+    string token = s.substr(0, s.find_first_of(LPAREN));
     StringUtility::trimWhitespace(token);
     return INVALID.count(token);
 }
@@ -90,14 +111,12 @@ bool Detector::isBlankLine(string &s) {
 }
 
 bool Detector::isComment(string &s) {
-    unordered_set<char> SKIP({'#', '/', '*'});
-    return SKIP.count((s.at(0)));
+    return COMMENT_START.count((s.at(0)));
 }
 
 bool Detector::isLongMethod(Function &function) const {
-    findEOFunction(function);
+    findEOFunction(function);  // assign f.end and f.blanks
     function.loc = ((function.end - function.start) - function.blanks) + 1;
-//    function.loc = function.end - function.start + 1;
     if (function.loc > LONG_METHOD_THRESHOLD) {
         function.longFunction = true;
         return true;
@@ -106,14 +125,16 @@ bool Detector::isLongMethod(Function &function) const {
 }
 
 void Detector::findEOFunction(Function &function) const {
-    const unordered_set<char> delims({'}', '{'});
-    ifstream inFile(this->file);
-    string line;
-    int lineNo = 0;
-    int matchesMade = 0;
-    unordered_map<char, char> CLOSED({{'}', '{'}});
-    bool EOFFound = false;
+    const unordered_set<char> CURLPAIR({RCURL, LCURL});
+    unordered_map<char, char> CLOSED({{RCURL, LCURL}});
+
+    int lineNo = 0, matchesMade = 0;
+    bool EOFound = false;
+
     vector<char> stack = {};
+
+    string line;
+    ifstream inFile(this->file);
     do {
         getline(inFile, line);
         lineNo++;
@@ -121,11 +142,12 @@ void Detector::findEOFunction(Function &function) const {
             continue;
         }
         if (isBlankLine(line)) {
-            function.blanks++;
+            function.blanks++; // track blank lines for loc calc
             continue;
         }
+        // for curly brace pair to EOFunction
         for (char &c: line) {
-            if (!delims.count(c))
+            if (!CURLPAIR.count(c))
                 continue;
             if (CLOSED.count(c)) {
                 if (!stack.empty() && stack.back() == CLOSED[c]) {
@@ -136,27 +158,27 @@ void Detector::findEOFunction(Function &function) const {
                 stack.push_back(c);
         }
         if (stack.empty() && matchesMade > 0) {
-            function.end = lineNo;
-            EOFFound = true;
+            function.end = lineNo;  // store end of function
+            EOFound = true;
         }
-    } while (!EOFFound);
+    } while (!EOFound);
     inFile.close();
 }
 
 void Detector::detectLongMethods() {
-    for (auto &f: this->functionList) {
-        isLongMethod(f);
-    }
+    for (auto &f: this->functionList) { isLongMethod(f); }
 }
 
 void Detector::detectLongParameterList() {
-    for (auto &f: this->functionList) {
-        isLongParameterList(f);
-    }
+    for (auto &f: this->functionList) { isLongParameterList(f); }
 }
 
+/**
+ * Number of parameters = Number of commas in function signature + 1
+ */
 void Detector::isLongParameterList(Function &function) {
     string sig = function.signature;
+
     string::difference_type n = count(sig.begin(), sig.end(), ',');
     function.paramCount = n + 1;
     if (function.paramCount <= LONG_PARAM_THRESHOLD) {
@@ -166,18 +188,16 @@ void Detector::isLongParameterList(Function &function) {
     }
 }
 
+/**
+ * Compare stringified function's hamming ratio.
+ */
 void Detector::detectDuplicatedCode() {
     // find end index of each function, store to function
-    for (auto &f: functionList) {
-        findEOFunction(f);
-    }
+    for (auto &f: functionList) { findEOFunction(f); }
 
     // get stringified version and store to function
-    for (auto &f: functionList) {
-        stringifyFunction(f);
-    }
+    for (auto &f: functionList) { stringifyFunction(f); }
 
-    // find fs with same char count and get the hamming ratio
     for (auto i = 0; i < functionList.size(); i++) {
         Function &f1 = functionList[i];
         for (auto j = i + 1; j < functionList.size(); j++) {
@@ -191,7 +211,7 @@ void Detector::isDuplicatedCode(Function &f1, Function &f2) {
     if (f1.charCount == f2.charCount) {
         double similarity = 1.0 - hammingRatio(f1.stringified, f2.stringified);
         if (similarity >= DUP_CODE_THRESHOLD) {
-            dups.insert(dups.end(), {f1.handle, f2.handle});
+            duplicates.insert(duplicates.end(), {f1.handle, f2.handle});
         }
     }
 }
@@ -203,6 +223,10 @@ void Detector::printFunctions() {
         cout << f << "\n";
 }
 
+/**
+ * Stringify body of a function including everything between first { and last }
+ * no whitespace.
+ */
 void Detector::stringifyFunction(Function &function) const {
     ifstream inFile(this->file);
     string ss, line;
@@ -214,14 +238,12 @@ void Detector::stringifyFunction(Function &function) const {
         lineNo++;
         getline(inFile, line);
 
-        if (lineNo < function.start) {
-            continue;
-        }
+        if (lineNo < function.start) { continue; }
 
         ss += regex_replace(line, r, "");
     }
     inFile.close();
-    ss.erase(0, ss.find('{'));
+    ss.erase(0, ss.find(LCURL));
     function.stringified = ss;
     function.charCount = function.stringified.length();
 }

@@ -12,8 +12,6 @@ using namespace std;
 
 class Function
 {
-private:
-
 public:
     string signature;
     string handle;
@@ -34,7 +32,6 @@ public:
 
     void format();
 
-    friend ostream &operator<<(ostream &os, const Function &func);
 };
 
 #include "Function.cpp"

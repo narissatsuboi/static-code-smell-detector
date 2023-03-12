@@ -18,19 +18,19 @@ public:
     vector<Function> functionList;
     string file;
 
-    vector<string> dups;
+    vector<string> duplicates;
 
     static bool skipLine(string &line);
 
     static bool hasInvalidFirstToken(string &s);
 
-    static bool hasParenthesesPair(string &s);
+    static bool hasParenPair(string &s);
 
     static bool isBlankLine(string &s);
 
     static bool isComment(string &s);
 
-    static bool isDelimiter(char &c);
+    static bool isBracket(char &c);
 
     void buildFunctionList();
 
@@ -50,9 +50,10 @@ public:
 
     static double hammingRatio(string& s1, string&s2);
 
+    void stringifyFunction(Function &function) const;
+
     void printFunctions();
 
-    void stringifyFunction(Function &function) const;
 };
 
 #include "Detector.cpp"
