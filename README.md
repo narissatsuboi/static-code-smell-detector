@@ -19,7 +19,7 @@ Given a valid .cpp file, the detector will can run the following code smell dete
 ### Build and Run Executable 
 To build and run from source folder:
 ```
-$ cmake -build .
+$ cmake .
 $ g++ main.cpp -o myDetector
 $./myDetector <filepath> 
 ```
