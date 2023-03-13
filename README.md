@@ -1,4 +1,4 @@
-# Static Code Smell Detector
+# static code smell detector
 
 Console application, detects Long Method, Long Parameter List, and structurally Duplicated Code in a .cpp file. 
 Created for Software Refactoring and Design course at Seattle University. 
